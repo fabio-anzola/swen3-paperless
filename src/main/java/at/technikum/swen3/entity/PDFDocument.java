@@ -8,6 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@Table(name = "pdfdocument")
 public class PDFDocument {
 
   @Id
