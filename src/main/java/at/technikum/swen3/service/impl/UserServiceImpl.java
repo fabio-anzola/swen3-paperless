@@ -3,8 +3,10 @@ package at.technikum.swen3.service.impl;
 import at.technikum.swen3.entity.User;
 import at.technikum.swen3.repository.UserRepository;
 import at.technikum.swen3.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -21,9 +23,11 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  @Transactional
   public User deleteUser(Long id) {
-    var deleteUser = userRepository.findById(id);
-    userRepository.deleteById(id);
-    return deleteUser;
+    User existing = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("User " + id + " not found"));
+    userRepository.delete(existing);
+    return existing;
   }
 }
