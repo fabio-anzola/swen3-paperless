@@ -11,7 +11,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - swen3_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -23,8 +23,8 @@ services:
     depends_on:
       - db
     volumes:
-      - swen3_pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgadmin
 
 volumes:
-  swen3_postgres_data:
-  swen3_pgadmin_data:
+  postgres_data:
+  pgadmin_data:
