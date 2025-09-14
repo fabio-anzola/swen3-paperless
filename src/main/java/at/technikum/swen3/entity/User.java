@@ -17,12 +17,10 @@ public class User {
   private Long id;
 
   @NotNull
-  @Size(min = 2, max = 100)
-  @Column(nullable = false, unique = true, length = 100)
+  @Column(nullable = false, unique = true)
   private String username;
 
   @NotNull
-  @Size(min = 5, max = 100)
-  @Column(nullable = false, length = 100)
+  @Column(nullable = false)
   private String password;
 }
