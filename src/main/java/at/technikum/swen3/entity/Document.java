@@ -8,16 +8,16 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "pdfdocument")
-public class PDFDocument {
+@Table(name = "document")
+public class Document {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  private User owner;
 
   @NotNull
   @Column(nullable = false)
