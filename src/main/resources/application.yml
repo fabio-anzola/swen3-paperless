@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: swen3
+
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5455/paperlessdb
+    username: paperless_user
+    password: paperless_pw
+
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
