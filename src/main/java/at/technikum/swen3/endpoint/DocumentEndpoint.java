@@ -5,9 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(value = DocumentEndpoint.BASE_PATH)
+@RequestMapping(value = "/api/v1/document")
 public class DocumentEndpoint {
-  static final String BASE_PATH = "/api/v1/documents";
-
 
 }
