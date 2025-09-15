@@ -1,14 +1,16 @@
-package at.technikum.swen3.entity;
+package at.technikum.swen3.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
 @Entity
 @Table(name = "document")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Document {
 
   @Id
