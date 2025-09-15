@@ -1,11 +1,11 @@
 package at.technikum.swen3.endpoint;
 
-import at.technikum.swen3.dto.user.UserCreateDto;
-import at.technikum.swen3.dto.user.UserDto;
-import at.technikum.swen3.endpoint.mapper.UserMapper;
-import at.technikum.swen3.entity.User;
+import at.technikum.swen3.services.dtos.user.UserCreateDto;
+import at.technikum.swen3.services.dtos.user.UserDto;
+import at.technikum.swen3.services.mapper.UserMapper;
+import at.technikum.swen3.entities.User;
 import at.technikum.swen3.exception.UserCreationException;
-import at.technikum.swen3.service.IUserService;
+import at.technikum.swen3.services.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
