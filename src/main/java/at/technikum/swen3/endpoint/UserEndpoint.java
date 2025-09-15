@@ -9,10 +9,7 @@ import at.technikum.swen3.services.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.lang.invoke.MethodHandles;
 
@@ -37,12 +34,19 @@ public class UserEndpoint {
 
         try {
             User userDto = userMapper.userCreateDtoToUser(user);
-            var createdUser = userService.registerUser(userDto);
+            User createdUser = userService.registerUser(userDto);
             LOG.info("User created successfully with ID: {}", createdUser.getId());
             return userMapper.userToUserDto(createdUser);
         } catch (Exception e) {
             LOG.error("Failed to create user {}: {}", user.username(), e.getMessage());
             throw new UserCreationException("Could not create user " + user.username(), e);
         }
+    }
+
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable Long userId) {
+        LOG.info("Removing user with ID {}", userId);
+        userService.deleteUser(userId);
+        LOG.info("Removed User {} successfully", userId);
     }
 }
