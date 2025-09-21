@@ -1,17 +1,14 @@
 package at.technikum.swen3.endpoint;
 
-import at.technikum.swen3.dto.user.*;
-import at.technikum.swen3.entity.User;
-import at.technikum.swen3.endpoint.mapper.UserMapper;
+import at.technikum.swen3.services.dtos.user.UserCreateDto;
+import at.technikum.swen3.services.dtos.user.UserDto;
+import at.technikum.swen3.services.mapper.UserMapper;
+import at.technikum.swen3.entities.User;
 import at.technikum.swen3.exception.UserCreationException;
-import at.technikum.swen3.repository.UserRepository;
-import at.technikum.swen3.security.JwtUtil;
-import at.technikum.swen3.service.IUserService;
-
+import at.technikum.swen3.services.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.invoke.MethodHandles;
@@ -40,8 +37,8 @@ public class UserEndpoint {
         LOG.info("Creating new user: {}", user.username());
 
         try {
-            User userEntity = userMapper.userCreateDtoToUser(user);
-            var createdUser = userService.registerUser(userEntity);
+            User userDto = userMapper.userCreateDtoToUser(user);
+            User createdUser = userService.registerUser(userDto);
             LOG.info("User created successfully with ID: {}", createdUser.getId());
             return userMapper.userToUserDto(createdUser);
         } catch (Exception e) {
@@ -50,19 +47,10 @@ public class UserEndpoint {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDto loginDto) {
-        LOG.info("Attempting login for user: {}", loginDto.username());
-
-        User user = userRepository.findByUsername(loginDto.username())
-            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-        if (!user.getPassword().equals(loginDto.password())) {
-            throw new RuntimeException("Invalid credentials");
-        }
-
-        String token = jwtUtil.generateToken(user.getUsername());
-        LOG.info("User {} logged in successfully", user.getUsername());
-        return ResponseEntity.ok(token);
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable Long userId) {
+        LOG.info("Removing user with ID {}", userId);
+        userService.deleteUser(userId);
+        LOG.info("Removed User {} successfully", userId);
     }
 }

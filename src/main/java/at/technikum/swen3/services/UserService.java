@@ -1,7 +1,7 @@
-package at.technikum.swen3.service;
+package at.technikum.swen3.services;
 
-import at.technikum.swen3.entity.User;
-import at.technikum.swen3.repository.UserRepository;
+import at.technikum.swen3.entities.User;
+import at.technikum.swen3.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
