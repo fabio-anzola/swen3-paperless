@@ -1,7 +1,7 @@
-package at.technikum.swen3.services;
+package at.technikum.swen3.service;
 
-import at.technikum.swen3.entities.User;
-import at.technikum.swen3.repositories.UserRepository;
+import at.technikum.swen3.entity.User;
+import at.technikum.swen3.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,4 +29,11 @@ public class UserService implements IUserService {
     userRepository.delete(existing);
     return existing;
   }
+
+  @Override
+  public User findByUsername(String username) {
+    return userRepository.findByUsername(username)
+        .orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
+  }
+
 }

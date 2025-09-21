@@ -1,4 +1,4 @@
-package at.technikum.swen3.services.dtos.user;
+package at.technikum.swen3.service.dtos.user;
 
 public record UserCreateDto(String username, String password) {
 }

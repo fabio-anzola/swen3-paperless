@@ -1,8 +1,8 @@
-package at.technikum.swen3.services.mapper;
+package at.technikum.swen3.service.mapper;
 
-import at.technikum.swen3.services.dtos.user.UserCreateDto;
-import at.technikum.swen3.services.dtos.user.UserDto;
-import at.technikum.swen3.entities.User;
+import at.technikum.swen3.service.dtos.user.UserCreateDto;
+import at.technikum.swen3.service.dtos.user.UserDto;
+import at.technikum.swen3.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

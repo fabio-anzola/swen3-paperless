@@ -1,4 +1,4 @@
-package at.technikum.swen3.entities;
+package at.technikum.swen3.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

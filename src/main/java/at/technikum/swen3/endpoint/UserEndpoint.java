@@ -1,14 +1,18 @@
 package at.technikum.swen3.endpoint;
 
-import at.technikum.swen3.services.dtos.user.UserCreateDto;
-import at.technikum.swen3.services.dtos.user.UserDto;
-import at.technikum.swen3.services.mapper.UserMapper;
-import at.technikum.swen3.entities.User;
+
+import at.technikum.swen3.security.JwtUtil;
+import at.technikum.swen3.service.dtos.user.UserCreateDto;
+import at.technikum.swen3.service.dtos.user.UserDto;
+import at.technikum.swen3.service.dtos.user.UserLoginDto;
+import at.technikum.swen3.service.mapper.UserMapper;
+import at.technikum.swen3.entity.User;
 import at.technikum.swen3.exception.UserCreationException;
-import at.technikum.swen3.services.IUserService;
+import at.technikum.swen3.service.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.invoke.MethodHandles;
@@ -20,15 +24,13 @@ public class UserEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final IUserService userService;
     private final UserMapper userMapper;
-    private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
+
     @Autowired
-    public UserEndpoint(IUserService userService, UserMapper userMapper,
-                        UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserEndpoint(IUserService userService, UserMapper userMapper, JwtUtil jwtUtil) {
         this.userService = userService;
         this.userMapper = userMapper;
-        this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
     }
 
@@ -45,6 +47,21 @@ public class UserEndpoint {
             LOG.error("Failed to create user {}: {}", user.username(), e.getMessage());
             throw new UserCreationException("Could not create user " + user.username(), e);
         }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody UserLoginDto loginDto) {
+        LOG.info("Attempting login for user: {}", loginDto.username());
+
+        User user = userService.findByUsername(loginDto.username());
+
+        if (!user.getPassword().equals(loginDto.password())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        String token = jwtUtil.generateToken(user.getUsername());
+        LOG.info("User {} logged in successfully", user.getUsername());
+        return ResponseEntity.ok(token);
     }
 
     @DeleteMapping("/{userId}")
