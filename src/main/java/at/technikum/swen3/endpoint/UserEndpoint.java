@@ -65,9 +65,10 @@ public class UserEndpoint {
     }
 
     @DeleteMapping("/{userId}")
-    public void deleteUser(@PathVariable Long userId) {
+    public UserDto deleteUser(@PathVariable Long userId) {
         LOG.info("Removing user with ID {}", userId);
-        userService.deleteUser(userId);
+        User deletedUser = userService.deleteUser(userId);
         LOG.info("Removed User {} successfully", userId);
+        return userMapper.userToUserDto(deletedUser);
     }
 }
