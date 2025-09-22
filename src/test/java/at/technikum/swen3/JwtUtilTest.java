@@ -27,7 +27,6 @@ class JwtUtilTest {
 
         assertNotNull(token);
 
-        // Parse the token to verify its claims
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(jwtUtil.getKey())
                 .build()

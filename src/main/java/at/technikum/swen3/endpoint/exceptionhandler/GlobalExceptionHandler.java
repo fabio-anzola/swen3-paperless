@@ -17,7 +17,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @ExceptionHandler(value = {at.technikum.swen3.exception.UserCreationException.class})
-    protected ResponseEntity<Object> handleUserCreationException(RuntimeException ex, WebRequest request) {
+    public ResponseEntity<Object> handleUserCreationException(RuntimeException ex, WebRequest request) {
         LOGGER.warn(ex.getMessage());
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
@@ -35,7 +35,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
+    public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         LOGGER.error("Unhandled exception: ", ex);
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
