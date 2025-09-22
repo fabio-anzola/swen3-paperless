@@ -1,17 +1,35 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  app:
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/paperlessdb
+      - SPRING_DATASOURCE_USERNAME=paperless_user
+      - SPRING_DATASOURCE_PASSWORD=paperless_pw
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - app-network
+
   db:
     image: postgres:14-alpine
     restart: always
     environment:
-        POSTGRES_USER: paperless_user
-        POSTGRES_PASSWORD: paperless_pw
-        POSTGRES_DB: paperlessdb
+      POSTGRES_USER: paperless_user
+      POSTGRES_PASSWORD: paperless_pw
+      POSTGRES_DB: paperlessdb
     ports:
-      - '5455:5432'
+      - "5455:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -24,7 +42,13 @@ services:
       - db
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
   pgadmin_data:
+
+networks:
+  app-network:
+    driver: bridge
