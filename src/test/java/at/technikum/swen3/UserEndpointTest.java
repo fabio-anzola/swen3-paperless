@@ -1,9 +1,9 @@
 package at.technikum.swen3;
 
-import at.technikum.swen3.dto.user.UserCreateDto;
-import at.technikum.swen3.dto.user.UserDto;
+import at.technikum.swen3.service.dtos.user.UserCreateDto;
+import at.technikum.swen3.service.dtos.user.UserDto;
 import at.technikum.swen3.endpoint.UserEndpoint;
-import at.technikum.swen3.endpoint.mapper.UserMapper;
+import at.technikum.swen3.service.mapper.UserMapper;
 import at.technikum.swen3.entity.User;
 import at.technikum.swen3.exception.UserCreationException;
 import at.technikum.swen3.service.IUserService;
