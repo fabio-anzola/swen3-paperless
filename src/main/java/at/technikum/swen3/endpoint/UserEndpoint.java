@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.invoke.MethodHandles;
@@ -70,5 +71,13 @@ public class UserEndpoint {
         User deletedUser = userService.deleteUser(userId);
         LOG.info("Removed User {} successfully", userId);
         return userMapper.userToUserDto(deletedUser);
+    }
+
+    @GetMapping("/whoami")
+    public UserDto whoami(Authentication authentication) {
+        String username = authentication.getName();
+        LOG.info("Fetching details for user: {}", username);
+        User user = userService.findByUsername(username);
+        return userMapper.userToUserDto(user);
     }
 }
