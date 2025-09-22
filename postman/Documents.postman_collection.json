@@ -1,0 +1,188 @@
+{
+	"info": {
+		"_postman_id": "bbd7e6e8-ac26-479e-8647-1562394ed10c",
+		"name": "Documents",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37705597",
+		"_collection_link": "https://fhtw-swen3-teamf.postman.co/workspace/FHTW-Swen3-TeamF~6bbf5a59-bb2f-4c33-958e-dd4929a92122/collection/37705597-bbd7e6e8-ac26-479e-8647-1562394ed10c?action=share&source=collection_link&creator=37705597"
+	},
+	"item": [
+		{
+			"name": "Upload Document",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/fabioanzola/Documents/FHTW/Checkliste Prüfungsvorbereitung.pdf"
+						},
+						{
+							"key": "meta",
+							"value": "{\"name\": \"My Doc\"}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/document",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List My Documents",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/document",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Document Metadata",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/document/1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Download Document Content",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/document/1/content",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document",
+						"1",
+						"content"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Document Metadata",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Updated Name\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/document/1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Document",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/document/1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"document",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api/v1"
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	]
+}
