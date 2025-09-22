@@ -21,8 +21,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         LOGGER.warn(ex.getMessage());
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
-        String requestPath = servletWebRequest.getRequest().getServletPath();
-
+        String requestPath = servletWebRequest.getRequest().getRequestURI();
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.UNPROCESSABLE_ENTITY.value(),
                 HttpStatus.UNPROCESSABLE_ENTITY.name(),
@@ -40,8 +39,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         LOGGER.error("Unhandled exception: ", ex);
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
-        String requestPath = servletWebRequest.getRequest().getServletPath();
-
+        String requestPath = servletWebRequest.getRequest().getRequestURI();
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.name(),
