@@ -1,61 +1,61 @@
 package at.technikum.swen3;
 
 import at.technikum.swen3.endpoint.exceptionhandler.GlobalExceptionHandler;
+import at.technikum.swen3.endpoint.exceptionhandler.ErrorResponse;
 import at.technikum.swen3.exception.UserCreationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.ServletWebRequest;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.Objects;
 
-@WebMvcTest(controllers = TestController.class)
-@Import(GlobalExceptionHandler.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class GlobalExceptionHandlerTest {
 
-    @Autowired
-    private MockMvc mvc;
+    private GlobalExceptionHandler globalExceptionHandler;
 
-    @RestController
-    static class TestController {
-        @GetMapping("/test/user-creation")
-        public void throwUserCreationException() {
-            throw new UserCreationException("User creation failed", null);
-        }
-
-        @GetMapping("/test/unhandled")
-        public void throwUnhandledException() {
-            throw new RuntimeException("Some unexpected error");
-        }
+    @BeforeEach
+    void setUp() {
+        globalExceptionHandler = new GlobalExceptionHandler();
     }
 
     @Test
-    void givenUserCreationException_whenGet_thenStatus422() throws Exception {
-        mvc.perform(get("/test/user-creation")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status", is(422)))
-                .andExpect(jsonPath("$.error", is("UNPROCESSABLE_ENTITY")))
-                .andExpect(jsonPath("$.message", is("User creation failed")))
-                .andExpect(jsonPath("$.path", is("/test/user-creation")));
+    void givenUserCreationException_whenHandleException_thenStatus422() {
+        UserCreationException exception = new UserCreationException("User creation failed", null);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/test/user-creation");
+        ServletWebRequest webRequest = new ServletWebRequest(request);
+
+        ResponseEntity<Object> response = globalExceptionHandler.handleUserCreationException(exception, webRequest);
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+        assertEquals("application/json", Objects.requireNonNull(response.getHeaders().getContentType()).toString());
+        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
+        assertEquals(422, errorResponse.status());
+        assertEquals("UNPROCESSABLE_ENTITY", errorResponse.error());
+        assertEquals("User creation failed", errorResponse.message());
+        assertEquals("/test/user-creation", errorResponse.path());
     }
 
     @Test
-    void givenUnhandledException_whenGet_thenStatus500() throws Exception {
-        mvc.perform(get("/test/unhandled")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status", is(500)))
-                .andExpect(jsonPath("$.error", is("INTERNAL_SERVER_ERROR")))
-                .andExpect(jsonPath("$.message", is("An unexpected error occurred.")))
-                .andExpect(jsonPath("$.path", is("/test/unhandled")));
+    void givenUnhandledException_whenHandleException_thenStatus500() {
+        RuntimeException exception = new RuntimeException("Some unexpected error");
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/test/unhandled");
+        ServletWebRequest webRequest = new ServletWebRequest(request);
+
+        ResponseEntity<Object> response = globalExceptionHandler.handleAllExceptions(exception, webRequest);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("application/json", Objects.requireNonNull(response.getHeaders().getContentType()).toString());
+        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
+        assertEquals(500, errorResponse.status());
+        assertEquals("INTERNAL_SERVER_ERROR", errorResponse.error());
+        assertEquals("An unexpected error occurred.", errorResponse.message());
+        assertEquals("/test/unhandled", errorResponse.path());
     }
 }
