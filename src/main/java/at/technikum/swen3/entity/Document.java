@@ -17,6 +17,10 @@ public class Document {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
+  @NotNull
+  @Column(nullable = false)
+  private String name;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)
   private User owner;
