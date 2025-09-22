@@ -1,11 +1,8 @@
 package at.technikum.swen3.service.mapper;
 
 import at.technikum.swen3.entity.Document;
-import at.technikum.swen3.entity.User;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
-import at.technikum.swen3.service.dtos.user.UserCreateDto;
-import at.technikum.swen3.service.dtos.user.UserDto;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
