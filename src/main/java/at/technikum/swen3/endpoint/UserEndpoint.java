@@ -1,14 +1,19 @@
 package at.technikum.swen3.endpoint;
 
-import at.technikum.swen3.services.dtos.user.UserCreateDto;
-import at.technikum.swen3.services.dtos.user.UserDto;
-import at.technikum.swen3.services.mapper.UserMapper;
-import at.technikum.swen3.entities.User;
+
+import at.technikum.swen3.security.JwtUtil;
+import at.technikum.swen3.service.dtos.user.UserCreateDto;
+import at.technikum.swen3.service.dtos.user.UserDto;
+import at.technikum.swen3.service.dtos.user.UserLoginDto;
+import at.technikum.swen3.service.mapper.UserMapper;
+import at.technikum.swen3.entity.User;
 import at.technikum.swen3.exception.UserCreationException;
-import at.technikum.swen3.services.IUserService;
+import at.technikum.swen3.service.IUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.invoke.MethodHandles;
@@ -18,14 +23,16 @@ import java.lang.invoke.MethodHandles;
 public class UserEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
     private final IUserService userService;
     private final UserMapper userMapper;
+    private final JwtUtil jwtUtil;
+
 
     @Autowired
-    public UserEndpoint(IUserService userService, UserMapper userMapper) {
+    public UserEndpoint(IUserService userService, UserMapper userMapper, JwtUtil jwtUtil) {
         this.userService = userService;
         this.userMapper = userMapper;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
@@ -43,10 +50,34 @@ public class UserEndpoint {
         }
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody UserLoginDto loginDto) {
+        LOG.info("Attempting login for user: {}", loginDto.username());
+
+        User user = userService.findByUsername(loginDto.username());
+
+        if (!user.getPassword().equals(loginDto.password())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        String token = jwtUtil.generateToken(user.getUsername());
+        LOG.info("User {} logged in successfully", user.getUsername());
+        return ResponseEntity.ok(token);
+    }
+
     @DeleteMapping("/{userId}")
-    public void deleteUser(@PathVariable Long userId) {
+    public UserDto deleteUser(@PathVariable Long userId) {
         LOG.info("Removing user with ID {}", userId);
-        userService.deleteUser(userId);
+        User deletedUser = userService.deleteUser(userId);
         LOG.info("Removed User {} successfully", userId);
+        return userMapper.userToUserDto(deletedUser);
+    }
+
+    @GetMapping("/whoami")
+    public UserDto whoami(Authentication authentication) {
+        String username = authentication.getName();
+        LOG.info("Fetching details for user: {}", username);
+        User user = userService.findByUsername(username);
+        return userMapper.userToUserDto(user);
     }
 }
