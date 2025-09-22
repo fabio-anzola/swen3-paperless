@@ -9,5 +9,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
     Page<Document> findAllByOwnerId(Long ownerId, Pageable pageable);
-    boolean existsByIdAndOwner_Id(Long id, Long ownerId);
 }
