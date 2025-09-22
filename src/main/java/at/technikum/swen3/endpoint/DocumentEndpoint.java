@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -27,12 +28,16 @@ import java.lang.invoke.MethodHandles;
 public class DocumentEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final IDocumentService documentService;
     private final IUserService userService;
+    private final ObjectMapper objectMapper;
 
-    public DocumentEndpoint(IDocumentService documentService, IUserService userService) {
+    @Autowired
+    public DocumentEndpoint(IDocumentService documentService, IUserService userService, ObjectMapper objectMapper) {
         this.documentService = documentService;
         this.userService = userService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -61,20 +66,14 @@ public class DocumentEndpoint {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public DocumentDto upload(Authentication authentication,
-                              @RequestPart("file") MultipartFile file,
-                              @RequestPart(value = "meta", required = false) String metaJson) throws IOException {
+    public DocumentDto upload(Authentication authentication, @RequestPart("file") MultipartFile file, @RequestPart(value = "meta", required = false) String metaJson) throws IOException {
         Long userId = userService.findByUsername(authentication.getName()).getId();
-        DocumentUploadDto meta = (metaJson != null && !metaJson.isBlank())
-                ? new ObjectMapper().readValue(metaJson, DocumentUploadDto.class)
-                : null;
+        DocumentUploadDto meta = (metaJson != null && !metaJson.isBlank()) ? objectMapper.readValue(metaJson, DocumentUploadDto.class) : null;
         return documentService.upload(userId, file, meta);
     }
 
     @PutMapping("/{id}")
-    public DocumentDto updateMeta(Authentication authentication,
-                                  @PathVariable Long id,
-                                  @RequestBody DocumentUploadDto meta) {
+    public DocumentDto updateMeta(Authentication authentication, @PathVariable Long id, @RequestBody DocumentUploadDto meta) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         return documentService.updateMeta(userId, id, meta);
     }
