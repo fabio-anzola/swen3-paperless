@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 
@@ -20,10 +21,33 @@ export default function Header() {
     <header className="bg-white shadow-sm border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Paperless System
-            </h1>
+          <div className="flex items-center space-x-8">
+            <Link href="/dashboard">
+              <h1 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                Paperless System
+              </h1>
+            </Link>
+            
+            <nav className="flex space-x-6">
+              <Link 
+                href="/dashboard" 
+                className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link 
+                href="/documents" 
+                className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                My Documents
+              </Link>
+              <Link 
+                href="/upload" 
+                className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Upload
+              </Link>
+            </nav>
           </div>
 
           <div className="flex items-center space-x-4">
