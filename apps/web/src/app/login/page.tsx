@@ -6,8 +6,8 @@ import { postLogin } from "@/lib/api";
 import { useAuth } from "../auth/AuthContext";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("user1");
-  const [password, setPassword] = useState("password1");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { setToken } = useAuth();
@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       const token = await postLogin(username, password);
       setToken(token);
-      router.push("/documents"); // choose your landing route
+      router.push("/documents");
     } catch (e: any) {
       setErr(e.message ?? "Login failed");
     } finally {
