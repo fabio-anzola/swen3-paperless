@@ -18,7 +18,7 @@ export default function DocumentsPage() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/document`, {
+        const res = await fetch(`/api/v1/document`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
@@ -53,23 +53,35 @@ export default function DocumentsPage() {
           {docs.map((d) => (
             <li key={d.id} className="flex items-center justify-between rounded-xl bg-white p-3 shadow">
               <span>{d.name}</span>
-              <a
+              <button
                 className="rounded-lg border px-3 py-1"
-                href={`${process.env.NEXT_PUBLIC_API_BASE}/document/${d.id}/content`}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => {
-                  // plain <a> won't include Authorization header
-                  e.preventDefault();
-                  alert("For secured downloads, we can add a small proxy route later.");
-                }}
+                onClick={() => downloadWithAuth(d.id, token!)}
               >
                 Download
-              </a>
+              </button>
             </li>
           ))}
         </ul>
       )}
     </main>
   );
+}
+
+async function downloadWithAuth(id: number, token: string) {
+  const res = await fetch(`/api/v1/document/${id}/content`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `${res.status} ${res.statusText}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
