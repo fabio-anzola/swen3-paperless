@@ -12,6 +12,7 @@ export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocumentDto[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
@@ -23,7 +24,7 @@ export default function DocumentsPage() {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        if (!res.ok) throw new Error(await safeText(res) || `${res.status} ${res.statusText}`);
         const page: Page<DocumentDto> = await res.json();
         setDocs(page.content);
       } catch (e: any) {
@@ -55,10 +56,22 @@ export default function DocumentsPage() {
             <li key={d.id} className="flex items-center justify-between rounded-xl bg-white p-3 shadow">
               <span>{d.name}</span>
               <button
-                className="rounded-lg border px-3 py-1"
-                onClick={() => downloadWithAuth(d.id, token!)}
+                className="rounded-lg border px-3 py-1 disabled:opacity-50"
+                disabled={downloadingId === d.id}
+                onClick={async () => {
+                  if (!token) return;
+                  setErr(null);
+                  setDownloadingId(d.id);
+                  try {
+                    await downloadWithAuth(d.id, token);
+                  } catch (e: any) {
+                    setErr(e?.message ?? "Download failed");
+                  } finally {
+                    setDownloadingId(null);
+                  }
+                }}
               >
-                Download
+                {downloadingId === d.id ? "Downloading…" : "Download"}
               </button>
             </li>
           ))}
@@ -73,16 +86,25 @@ async function downloadWithAuth(id: number, token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `${res.status} ${res.statusText}`);
+    throw new Error(await safeText(res) || `${res.status} ${res.statusText}`);
   }
+
+  const cd = res.headers.get("content-disposition") || "";
+  const match = /filename\*?=([^;]+)/i.exec(cd);
+  const raw = match ? match[1].trim().replace(/^UTF-8''/, "").replace(/"/g, "") : `document-${id}`;
+  const filename = decodeURIComponent(raw);
+
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "";
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+async function safeText(res: Response) {
+  try { return await res.text(); } catch { return null; }
 }

@@ -1,7 +1,7 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
+import { api } from "@/config";
 
 export async function postLogin(username: string, password: string): Promise<string> {
-  const res = await fetch('/api/v1/user/login', {
+  const res = await fetch(api('/user/login'), {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ username, password }),
