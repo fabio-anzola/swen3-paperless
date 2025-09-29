@@ -4,7 +4,6 @@ import { z } from "zod";
 
 const JwtPayloadSchema = z.object({
   username: z.string(),
-  // standard JWT fields are optional here (add more if you need them)
   iat: z.number().optional(),
   exp: z.number().optional(),
 });
@@ -43,7 +42,6 @@ function parseJwt(token: string): JwtPayload | null {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
 
-  // keep derived, parsed payload in state via memo
   const tokenData = useMemo(() => (token ? parseJwt(token) : null), [token]);
 
   useEffect(() => {
@@ -55,7 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (t) {
       const parsed = parseJwt(t);
       if (!parsed) {
-        // invalid/expired/malformed token: clear everything
         localStorage.removeItem("token");
         setTokenState(null);
         return;
