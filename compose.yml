@@ -1,6 +1,8 @@
 services:
   app:
-    build: .
+    build:
+      context: ./apps/rest
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "8080:8080"
@@ -12,6 +14,20 @@ services:
       - SPRING_DATASOURCE_USERNAME=paperless_user
       - SPRING_DATASOURCE_PASSWORD=paperless_pw
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - app-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - REST_API_BASE_URL=http://app:8080
+    depends_on:
+      - app
     networks:
       - app-network
 
