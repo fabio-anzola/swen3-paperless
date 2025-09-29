@@ -18,8 +18,11 @@ export default function DocumentsPage() {
     setDownloadingId(id);
     try {
       await downloadDocument(id, token);
-    } catch (e: any) {
-      console.error("Download failed:", e?.message ?? "Download failed");
+    } catch (e: unknown) {
+      console.error(
+        "Download failed:",
+        e instanceof Error ? e.message : "Download failed"
+      );
     } finally {
       setDownloadingId(null);
     }

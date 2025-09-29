@@ -21,8 +21,8 @@ export default function LoginPage() {
       const token = await postLogin(username, password);
       setToken(token);
       router.push("/documents");
-    } catch (e: any) {
-      setErr(e.message ?? "Login failed");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Login failed");
     } finally {
       setLoading(false);
     }

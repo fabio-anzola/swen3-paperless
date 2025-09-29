@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8080:8080"
+      - "4000:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -27,7 +27,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REST_API_BASE_URL=http://app:8080
+      - NODE_ENV=production
+      - BACKEND_URL=http://app:8080
+      - NEXT_PUBLIC_API_PREFIX=/api/v1
+      - NEXT_PUBLIC_HOME_ROUTE=/dashboard
     depends_on:
       - app
     networks:

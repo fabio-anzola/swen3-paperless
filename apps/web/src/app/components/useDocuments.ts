@@ -39,8 +39,8 @@ export function useDocuments(token: string | null) {
 
         const page: Page<DocumentDto> = await res.json();
         setDocuments(page.content);
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load documents");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load documents");
       } finally {
         setLoading(false);
       }
