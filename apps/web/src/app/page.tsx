@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { HOME_ROUTE } from "@/config";
 
 export default function Home() {
-  redirect("/login");
+  redirect(HOME_ROUTE);
 }
