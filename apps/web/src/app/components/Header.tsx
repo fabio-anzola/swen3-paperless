@@ -27,22 +27,22 @@ export default function Header() {
                 Paperless System
               </h1>
             </Link>
-            
+
             <nav className="flex space-x-6">
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Dashboard
               </Link>
-              <Link 
-                href="/documents" 
+              <Link
+                href="/documents"
                 className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
               >
                 My Documents
               </Link>
-              <Link 
-                href="/upload" 
+              <Link
+                href="/upload"
                 className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Upload
