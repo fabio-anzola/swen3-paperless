@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     const backend =
       process.env.NODE_ENV === "production"
         ? process.env.BACKEND_URL || "http://app:8080"
-        : "http://localhost:4000";
+        : "http://localhost:8080";
 
     console.log(`Using backend URL: ${backend}`);
 
