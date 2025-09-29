@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { api } from "@/config";
 
 type DocumentDto = { id: number; name: string; s3Key?: string | null; ownerId: number };
 type Page<T> = { content: T[] };
@@ -18,7 +19,7 @@ export default function DocumentsPage() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(`/api/v1/document`, {
+        const res = await fetch(api('/document'), {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
@@ -68,7 +69,7 @@ export default function DocumentsPage() {
 }
 
 async function downloadWithAuth(id: number, token: string) {
-  const res = await fetch(`/api/v1/document/${id}/content`, {
+  const res = await fetch(api(`/document/${id}/content`), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
