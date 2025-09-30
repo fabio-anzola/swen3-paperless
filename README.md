@@ -10,6 +10,7 @@ A Spring Boot application for document management with PostgreSQL database and p
 ## Quick Start
 
 ### Build and Start the Application
+
 ```bash
 # Build and start all services (database, app, pgAdmin)
 docker compose up --build -d
@@ -29,6 +30,7 @@ docker compose up --build
 ## Database Configuration
 
 The application uses PostgreSQL with the following configuration:
+
 - **Database Name**: `paperlessdb`
 - **Username**: `paperless_user`
 - **Password**: `paperless_pw`
