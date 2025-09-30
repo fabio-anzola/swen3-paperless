@@ -1,6 +1,7 @@
 "use client";
 
 import { postLogin } from "@/lib/api";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
@@ -55,6 +56,14 @@ export default function LoginPage() {
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="text-blue-600 hover:underline">
+            Create one
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }
