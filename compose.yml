@@ -9,6 +9,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/paperlessdb
       - SPRING_DATASOURCE_USERNAME=paperless_user
