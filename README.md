@@ -16,7 +16,7 @@ A Spring Boot application for document management with PostgreSQL database and p
 docker compose up --build -d
 
 # Or run in foreground to see logs
-docker compose up --build
+docker compose up --build --scale worker=3
 ```
 
 ### Access the Services
