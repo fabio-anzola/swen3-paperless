@@ -3,8 +3,6 @@ package at.technikum.swen3.worker;
 import java.time.Duration;
 import java.util.Collections;
 
-import at.technikum.swen3.worker.config.KafkaConfig;
-import at.technikum.swen3.worker.config.WorkerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,6 +10,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import at.technikum.swen3.worker.config.KafkaConfig;
+import at.technikum.swen3.worker.config.WorkerConfig;
 
 public class WorkerApplication {
   private static final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
@@ -33,14 +34,17 @@ public class WorkerApplication {
 
       while (true) {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(config.pollMs));
-
+        boolean allOk = true;
         for (ConsumerRecord<String, String> record : records) {
           try {
             MessageProcessor.process(record, producer, config.outputTopic);
-            consumer.commitSync();
           } catch (Exception e) {
+            allOk = false;
             log.error("Failed to process record, not committing", e);
           }
+        }
+        if (allOk) {
+          consumer.commitSync();
         }
       }
 
