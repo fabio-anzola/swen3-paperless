@@ -32,7 +32,7 @@ public class WorkerApplication {
       Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
 
       while (true) {
-        ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+        ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(config.pollMs));
 
         for (ConsumerRecord<String, String> record : records) {
           try {
