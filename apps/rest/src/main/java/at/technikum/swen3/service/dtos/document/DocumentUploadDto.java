@@ -1,4 +1,7 @@
 package at.technikum.swen3.service.dtos.document;
 
-public record DocumentUploadDto(String name) {
+import jakarta.validation.constraints.Size;
+
+public record DocumentUploadDto(
+        @Size(max = 255) String name) {
 }
