@@ -2,12 +2,17 @@ package at.technikum.swen3.service;
 
 import at.technikum.swen3.entity.Document;
 import at.technikum.swen3.entity.User;
+import at.technikum.swen3.kafka.KafkaProducerService;
 import at.technikum.swen3.repository.DocumentRepository;
 import at.technikum.swen3.repository.UserRepository;
+import at.technikum.swen3.service.dtos.OcrTopicMessageDto;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.mapper.DocumentMapper;
 import at.technikum.swen3.service.model.DocumentDownload;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -25,11 +30,18 @@ public class DocumentService implements IDocumentService {
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
     private final DocumentMapper documentMapper;
+    private final KafkaProducerService kafkaProducerService;
+    private final ObjectMapper objectMapper;
+    @Value("${kafka.topic.ocr}")
+    private String ocrTopic;
 
-    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper) {
+
+    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper, KafkaProducerService kafkaProducerService, ObjectMapper objectMapper) {
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.documentMapper = documentMapper;
+        this.kafkaProducerService = kafkaProducerService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -72,6 +84,13 @@ public class DocumentService implements IDocumentService {
         d.setS3Key("TODO-S3KEY");
 
         d = documentRepository.save(d);
+
+        try {
+            kafkaProducerService.sendMessage(ocrTopic, objectMapper.writeValueAsString(new OcrTopicMessageDto(d.getS3Key())));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
         return documentMapper.toDto(d);
     }
 
