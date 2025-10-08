@@ -1,5 +1,7 @@
 package at.technikum.swen3.endpoint;
 
+import at.technikum.swen3.exception.DocumentNotFoundException;
+import at.technikum.swen3.exception.UserNotFoundException;
 import at.technikum.swen3.service.IDocumentService;
 import at.technikum.swen3.service.IUserService;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
@@ -43,6 +45,12 @@ public class DocumentEndpoint {
     @GetMapping
     public Page<DocumentDto> listMine(Authentication authentication, Pageable pageable) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
         LOG.info("Listing documents for userId={}", userId);
         return documentService.listMine(userId, pageable);
     }
@@ -50,6 +58,12 @@ public class DocumentEndpoint {
     @GetMapping("/{id}")
     public DocumentDto getMeta(Authentication authentication, @PathVariable Long id) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
         LOG.info("Fetching metadata for documentId={} by userId={}", id, userId);
         return documentService.getMeta(userId, id);
     }
@@ -59,6 +73,9 @@ public class DocumentEndpoint {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         LOG.info("Downloading content for documentId={} by userId={}", id, userId);
         DocumentDownload dl = documentService.download(userId, id);
+        if (dl == null) {
+            throw new DocumentNotFoundException("Document not found");
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentDisposition(ContentDisposition.attachment().filename(dl.filename()).build());
@@ -71,6 +88,12 @@ public class DocumentEndpoint {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public DocumentDto upload(Authentication authentication, @RequestPart("file") MultipartFile file, @RequestPart(value = "meta", required = false) String metaJson) throws IOException {
         Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
         LOG.info("Uploading document for userId={}, filename={}", userId, file.getOriginalFilename());
         DocumentUploadDto meta = (metaJson != null && !metaJson.isBlank()) ? objectMapper.readValue(metaJson, DocumentUploadDto.class) : null;
         return documentService.upload(userId, file, meta);
@@ -79,6 +102,12 @@ public class DocumentEndpoint {
     @PutMapping("/{id}")
     public DocumentDto updateMeta(Authentication authentication, @PathVariable Long id, @RequestBody DocumentUploadDto meta) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
         LOG.info("Updating metadata for documentId={} by userId={}", id, userId);
         return documentService.updateMeta(userId, id, meta);
     }
@@ -86,6 +115,15 @@ public class DocumentEndpoint {
     @DeleteMapping("/{id}")
     public void delete(Authentication authentication, @PathVariable Long id) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
+        if (id == null) {
+            throw new DocumentNotFoundException("Document not found");
+        }
         LOG.info("Deleting documentId={} by userId={}", id, userId);
         documentService.delete(userId, id);
     }

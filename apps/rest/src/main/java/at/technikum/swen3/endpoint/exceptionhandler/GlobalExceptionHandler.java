@@ -54,6 +54,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.NOT_FOUND, request);
     }
 
+    @ExceptionHandler(at.technikum.swen3.exception.DocumentNotFoundException.class)
+    public ResponseEntity<Object> handleDocumentNotFoundException(at.technikum.swen3.exception.DocumentNotFoundException ex, WebRequest request) {
+        LOGGER.warn("Document not found: {}", ex.getMessage());
+
+        ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+        String requestPath = servletWebRequest.getRequest().getRequestURI();
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.name(),
+                ex.getMessage(),
+                requestPath
+        );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.NOT_FOUND, request);
+    }
+
+
     @ExceptionHandler(ServiceException.class)
     public ResponseEntity<Object> handleServiceException(ServiceException ex, WebRequest request) {
         LOGGER.error("Service exception: ", ex);
@@ -107,6 +126,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.BAD_REQUEST, request);
     }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Object> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
+        if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+            LOGGER.warn("Unauthorized: {}", ex.getReason());
+            ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+            String requestPath = servletWebRequest.getRequest().getRequestURI();
+            ErrorResponse errorResponse = new ErrorResponse(
+                    HttpStatus.UNAUTHORIZED.value(),
+                    HttpStatus.UNAUTHORIZED.name(),
+                    ex.getReason(),
+                    requestPath
+            );
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.UNAUTHORIZED, request);
+        }
+        return super.handleExceptionInternal(ex, null, new HttpHeaders(), ex.getStatusCode(), request);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
