@@ -1,24 +1,24 @@
 package at.technikum.swen3.worker.dto;
 
 public class OcrTopicMessageDto {
-  private String message;
+  private String s3Key;
 
   public OcrTopicMessageDto() {}
 
-  public OcrTopicMessageDto(String message) {
-    this.message = message;
+  public OcrTopicMessageDto(String s3Key) {
+    this.s3Key = s3Key;
   }
 
-  public String getMessage() {
-    return message;
+  public String getS3Key() {
+    return s3Key;
   }
 
-  public void setMessage(String message) {
-    this.message = message;
+  public void setS3Key(String s3Key) {
+    this.s3Key = s3Key;
   }
 
   @Override
   public String toString() {
-    return "OcrTopicMessageDto{message='" + message + "'}";
+    return "OcrTopicMessageDto{s3Key='" + s3Key + "'}";
   }
 }

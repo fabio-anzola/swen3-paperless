@@ -1,13 +1,15 @@
 package at.technikum.swen3.worker;
 
-import at.technikum.swen3.worker.dto.OcrTopicMessageDto;
-import at.technikum.swen3.worker.dto.ResultTopicMessageDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import at.technikum.swen3.worker.dto.OcrTopicMessageDto;
+import at.technikum.swen3.worker.dto.ResultTopicMessageDto;
 
 public class MessageProcessor {
     private static final Logger logger = LoggerFactory.getLogger(MessageProcessor.class);
@@ -24,7 +26,7 @@ public class MessageProcessor {
             logger.info("Parsed OcrTopicMessageDto: {}", input);
 
             ResultTopicMessageDto output =
-                new ResultTopicMessageDto(input.getMessage().toUpperCase());
+                new ResultTopicMessageDto(input.getS3Key().toUpperCase());
 
             String outputJson = objectMapper.writeValueAsString(output);
 
