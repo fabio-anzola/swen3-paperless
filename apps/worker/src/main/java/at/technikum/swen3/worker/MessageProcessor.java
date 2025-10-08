@@ -41,7 +41,7 @@ public class MessageProcessor {
                 });
 
         } catch (Exception e) {
-            logger.error("Invalid input message format. Expected JSON like {\"message\":\"...\"}", e);
+            logger.error("Invalid input message format. Expected JSON like {\"message\":\"...\"}. Received: {}", record.value(), e);
         }
     }
 }
