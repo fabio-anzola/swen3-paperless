@@ -1,6 +1,8 @@
 package at.technikum.swen3.endpoint;
 
 
+import at.technikum.swen3.exception.ServiceException;
+import at.technikum.swen3.exception.UserNotFoundException;
 import at.technikum.swen3.security.JwtUtil;
 import at.technikum.swen3.service.dtos.user.UserCreateDto;
 import at.technikum.swen3.service.dtos.user.UserDto;
@@ -9,6 +11,7 @@ import at.technikum.swen3.service.mapper.UserMapper;
 import at.technikum.swen3.entity.User;
 import at.technikum.swen3.exception.UserCreationException;
 import at.technikum.swen3.service.IUserService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +39,19 @@ public class UserEndpoint {
     }
 
     @PostMapping("/register")
-    public UserDto createUser(@RequestBody UserCreateDto user) {
+    public UserDto createUser(@Valid @RequestBody UserCreateDto user) {
         LOG.info("Creating new user: {}", user.username());
 
         try {
+            if (userService.findByUsername(user.username()) != null) {
+                throw new UserCreationException("user already exists");
+            }
             User userDto = userMapper.userCreateDtoToUser(user);
             User createdUser = userService.registerUser(userDto);
             LOG.info("User created successfully with ID: {}", createdUser.getId());
             return userMapper.userToUserDto(createdUser);
+        } catch (UserCreationException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("Failed to create user {}: {}", user.username(), e.getMessage());
             throw new UserCreationException("Could not create user " + user.username(), e);
@@ -51,13 +59,13 @@ public class UserEndpoint {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDto loginDto) {
+    public ResponseEntity<String> login(@Valid @RequestBody UserLoginDto loginDto) {
         LOG.info("Attempting login for user: {}", loginDto.username());
 
         User user = userService.findByUsername(loginDto.username());
 
         if (!user.getPassword().equals(loginDto.password())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new ServiceException("Invalid credentials");
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
@@ -69,6 +77,9 @@ public class UserEndpoint {
     public UserDto deleteUser(@PathVariable Long userId) {
         LOG.info("Removing user with ID {}", userId);
         User deletedUser = userService.deleteUser(userId);
+        if (deletedUser == null) {
+            throw new UserNotFoundException("User with ID " + userId + " not found");
+        }
         LOG.info("Removed User {} successfully", userId);
         return userMapper.userToUserDto(deletedUser);
     }
@@ -78,6 +89,9 @@ public class UserEndpoint {
         String username = authentication.getName();
         LOG.info("Fetching details for user: {}", username);
         User user = userService.findByUsername(username);
+        if (user == null) {
+            throw new UserNotFoundException("User with username " + username + " not found");
+        }
         return userMapper.userToUserDto(user);
     }
 }

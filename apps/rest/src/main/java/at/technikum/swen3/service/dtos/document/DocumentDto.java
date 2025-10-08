@@ -1,4 +1,9 @@
 package at.technikum.swen3.service.dtos.document;
 
-public record DocumentDto(Long id, String name, String s3Key, Long ownerId) {
+import jakarta.validation.constraints.Size;
+
+public record DocumentDto(Long id,
+                          @Size(max = 255) String name,
+                          @Size(max = 255) String s3Key,
+                          Long ownerId) {
 }
