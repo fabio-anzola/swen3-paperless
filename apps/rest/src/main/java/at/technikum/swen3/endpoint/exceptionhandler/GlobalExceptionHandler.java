@@ -1,24 +1,23 @@
 package at.technikum.swen3.endpoint.exceptionhandler;
 
-import at.technikum.swen3.exception.ServiceException;
-import at.technikum.swen3.exception.RepositoryException;
+import at.technikum.swen3.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.lang.invoke.MethodHandles;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    @ExceptionHandler(value = {at.technikum.swen3.exception.UserCreationException.class})
+    @ExceptionHandler(value = {UserCreationException.class})
     public ResponseEntity<Object> handleUserCreationException(RuntimeException ex, WebRequest request) {
         LOGGER.warn(ex.getMessage());
 
@@ -36,8 +35,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.UNPROCESSABLE_ENTITY, request);
     }
 
-    @ExceptionHandler(at.technikum.swen3.exception.UserNotFoundException.class)
-    public ResponseEntity<Object> handleUserNotFoundException(at.technikum.swen3.exception.UserNotFoundException ex, WebRequest request) {
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Object> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         LOGGER.warn("User not found: {}", ex.getMessage());
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
@@ -54,8 +53,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.NOT_FOUND, request);
     }
 
-    @ExceptionHandler(at.technikum.swen3.exception.DocumentNotFoundException.class)
-    public ResponseEntity<Object> handleDocumentNotFoundException(at.technikum.swen3.exception.DocumentNotFoundException ex, WebRequest request) {
+    @ExceptionHandler(DocumentNotFoundException.class)
+    public ResponseEntity<Object> handleDocumentNotFoundException(DocumentNotFoundException ex, WebRequest request) {
         LOGGER.warn("Document not found: {}", ex.getMessage());
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
@@ -109,8 +108,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
-    @ExceptionHandler(at.technikum.swen3.exception.ControllerException.class)
-    public ResponseEntity<Object> handleControllerException(at.technikum.swen3.exception.ControllerException ex, WebRequest request) {
+    @ExceptionHandler(ControllerException.class)
+    public ResponseEntity<Object> handleControllerException(ControllerException ex, WebRequest request) {
         LOGGER.error("Controller exception: ", ex);
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;

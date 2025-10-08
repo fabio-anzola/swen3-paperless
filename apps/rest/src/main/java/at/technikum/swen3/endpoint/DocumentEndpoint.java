@@ -8,19 +8,18 @@ import at.technikum.swen3.service.dtos.document.DocumentDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.model.DocumentDownload;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -46,8 +45,8 @@ public class DocumentEndpoint {
     public Page<DocumentDto> listMine(Authentication authentication, Pageable pageable) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         if (userId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
                     "Unauthorized: user not found"
             );
         }
@@ -59,8 +58,8 @@ public class DocumentEndpoint {
     public DocumentDto getMeta(Authentication authentication, @PathVariable Long id) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         if (userId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
                     "Unauthorized: user not found"
             );
         }
@@ -89,8 +88,8 @@ public class DocumentEndpoint {
     public DocumentDto upload(Authentication authentication, @RequestPart("file") MultipartFile file, @RequestPart(value = "meta", required = false) String metaJson) throws IOException {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         if (userId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
                     "Unauthorized: user not found"
             );
         }
@@ -100,11 +99,11 @@ public class DocumentEndpoint {
     }
 
     @PutMapping("/{id}")
-    public DocumentDto updateMeta(Authentication authentication, @PathVariable Long id, @RequestBody DocumentUploadDto meta) {
+    public DocumentDto updateMeta(Authentication authentication, @PathVariable Long id, @Valid @RequestBody DocumentUploadDto meta) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         if (userId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
                     "Unauthorized: user not found"
             );
         }
@@ -116,8 +115,8 @@ public class DocumentEndpoint {
     public void delete(Authentication authentication, @PathVariable Long id) {
         Long userId = userService.findByUsername(authentication.getName()).getId();
         if (userId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
                     "Unauthorized: user not found"
             );
         }

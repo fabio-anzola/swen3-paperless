@@ -11,6 +11,7 @@ import at.technikum.swen3.service.mapper.UserMapper;
 import at.technikum.swen3.entity.User;
 import at.technikum.swen3.exception.UserCreationException;
 import at.technikum.swen3.service.IUserService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class UserEndpoint {
     }
 
     @PostMapping("/register")
-    public UserDto createUser(@RequestBody UserCreateDto user) {
+    public UserDto createUser(@Valid @RequestBody UserCreateDto user) {
         LOG.info("Creating new user: {}", user.username());
 
         try {
@@ -58,7 +59,7 @@ public class UserEndpoint {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserLoginDto loginDto) {
+    public ResponseEntity<String> login(@Valid @RequestBody UserLoginDto loginDto) {
         LOG.info("Attempting login for user: {}", loginDto.username());
 
         User user = userService.findByUsername(loginDto.username());
