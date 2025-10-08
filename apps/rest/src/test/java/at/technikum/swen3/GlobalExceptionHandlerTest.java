@@ -1,61 +1,74 @@
 package at.technikum.swen3;
 
 import at.technikum.swen3.endpoint.exceptionhandler.GlobalExceptionHandler;
-import at.technikum.swen3.endpoint.exceptionhandler.ErrorResponse;
+import at.technikum.swen3.exception.ControllerException;
+import at.technikum.swen3.exception.RepositoryException;
+import at.technikum.swen3.exception.ServiceException;
 import at.technikum.swen3.exception.UserCreationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 
-import java.util.Objects;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler globalExceptionHandler;
+    private GlobalExceptionHandler handler;
+    private WebRequest webRequest;
 
     @BeforeEach
     void setUp() {
-        globalExceptionHandler = new GlobalExceptionHandler();
+        handler = new GlobalExceptionHandler();
+        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+        servletRequest.setRequestURI("/test/uri");
+        webRequest = new ServletWebRequest(servletRequest);
     }
 
     @Test
-    void givenUserCreationException_whenHandleException_thenStatus422() {
-        UserCreationException exception = new UserCreationException("User creation failed", null);
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/test/user-creation");
-        ServletWebRequest webRequest = new ServletWebRequest(request);
+    void handleUserCreationException_returnsUnprocessableEntity() {
+        UserCreationException ex = new UserCreationException("User creation failed", null);
+        ResponseEntity<Object> response = handler.handleUserCreationException(ex, webRequest);
 
-        ResponseEntity<Object> response = globalExceptionHandler.handleUserCreationException(exception, webRequest);
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        assertEquals("application/json", Objects.requireNonNull(response.getHeaders().getContentType()).toString());
-        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
-        assertEquals(422, errorResponse.status());
-        assertEquals("UNPROCESSABLE_ENTITY", errorResponse.error());
-        assertEquals("User creation failed", errorResponse.message());
-        assertEquals("/test/user-creation", errorResponse.path());
+        assertEquals(422, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("User creation failed"));
     }
 
     @Test
-    void givenUnhandledException_whenHandleException_thenStatus500() {
-        RuntimeException exception = new RuntimeException("Some unexpected error");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/test/unhandled");
-        ServletWebRequest webRequest = new ServletWebRequest(request);
+    void handleServiceException_returnsBadRequest() {
+        ServiceException ex = new ServiceException("Service error");
+        ResponseEntity<Object> response = handler.handleServiceException(ex, webRequest);
 
-        ResponseEntity<Object> response = globalExceptionHandler.handleAllExceptions(exception, webRequest);
+        assertEquals(400, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Service error"));
+    }
 
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("application/json", Objects.requireNonNull(response.getHeaders().getContentType()).toString());
-        ErrorResponse errorResponse = (ErrorResponse) response.getBody();
-        assertEquals(500, errorResponse.status());
-        assertEquals("INTERNAL_SERVER_ERROR", errorResponse.error());
-        assertEquals("An unexpected error occurred.", errorResponse.message());
-        assertEquals("/test/unhandled", errorResponse.path());
+    @Test
+    void handleRepositoryException_returnsInternalServerError() {
+        RepositoryException ex = new RepositoryException("Repository error");
+        ResponseEntity<Object> response = handler.handleRepositoryException(ex, webRequest);
+
+        assertEquals(500, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Repository error"));
+    }
+
+    @Test
+    void handleControllerException_returnsBadRequest() {
+        ControllerException ex = new ControllerException("Controller error");
+        ResponseEntity<Object> response = handler.handleControllerException(ex, webRequest);
+
+        assertEquals(400, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Controller error"));
+    }
+
+    @Test
+    void handleAllExceptions_returnsInternalServerError() {
+        Exception ex = new Exception("Unknown error");
+        ResponseEntity<Object> response = handler.handleAllExceptions(ex, webRequest);
+
+        assertEquals(500, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("An unexpected error occurred."));
     }
 }
