@@ -25,8 +25,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
         String requestPath = servletWebRequest.getRequest().getRequestURI();
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                HttpStatus.UNPROCESSABLE_ENTITY.name(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
                 ex.getMessage(),
                 requestPath
         );
@@ -34,6 +34,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.UNPROCESSABLE_ENTITY, request);
+    }
+
+    @ExceptionHandler(at.technikum.swen3.exception.UserNotFoundException.class)
+    public ResponseEntity<Object> handleUserNotFoundException(at.technikum.swen3.exception.UserNotFoundException ex, WebRequest request) {
+        LOGGER.warn("User not found: {}", ex.getMessage());
+
+        ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+        String requestPath = servletWebRequest.getRequest().getRequestURI();
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.name(),
+                ex.getMessage(),
+                requestPath
+        );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        return handleExceptionInternal(ex, errorResponse, headers, HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(ServiceException.class)
