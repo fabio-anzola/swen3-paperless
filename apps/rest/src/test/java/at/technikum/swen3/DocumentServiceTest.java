@@ -34,7 +34,7 @@ class DocumentServiceTest {
         documentRepository = mock(DocumentRepository.class);
         userRepository = mock(UserRepository.class);
         documentMapper = mock(DocumentMapper.class);
-        documentService = new DocumentService(documentRepository, userRepository, documentMapper);
+        documentService = new DocumentService(documentRepository, userRepository, documentMapper, null, null);
     }
 
     @Test
