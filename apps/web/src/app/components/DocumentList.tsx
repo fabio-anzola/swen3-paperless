@@ -19,11 +19,13 @@ export default function DocumentList({
   onDownload,
 }: DocumentListProps) {
   if (documents.length === 0) {
-    return <p className="text-gray-500">No documents found.</p>;
+    return (
+      <p className="text-gray-300 text-center py-8">No documents found.</p>
+    );
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-3">
       {documents.map((document) => (
         <DocumentItem
           key={document.id}

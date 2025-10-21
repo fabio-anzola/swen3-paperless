@@ -44,7 +44,7 @@ export default function DocumentsPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold mb-4">Documents</h1>
+      <h1 className="text-3xl font-bold text-white mb-6">Documents</h1>
 
       <LoadingState loading={loading} error={error}>
         <DocumentList
