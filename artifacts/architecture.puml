@@ -1,0 +1,42 @@
+@startuml Paperless Microservice Architecture
+
+title Paperless Document Management System - Architecture
+
+skinparam componentStyle rectangle
+
+actor "User" as user
+
+' Frontend
+component "Next.js Web\n:3000" as web
+
+' Backend
+component "Spring Boot API\n:4000" as app
+
+' Message Broker
+queue "Kafka\n:9092" as kafka
+
+' Worker
+component "OCR Worker\n(Scalable)" as worker
+
+' Database
+database "PostgreSQL\n:5455" as db
+
+' Admin Tool
+component "pgAdmin\n:5050" as pgadmin
+
+' Cloud Storage
+cloud "File Storage" as storage
+
+' Interactions
+user --> web : HTTP
+web --> app : REST API
+app --> db : JDBC
+app --> kafka : Publish (ocr)
+kafka --> app : Consume (result)
+app --> storage : Store/Retrieve
+kafka --> worker : Consume (ocr)
+worker --> kafka : Publish (result)
+worker --> storage : Read
+pgadmin --> db : Admin
+
+@enduml
