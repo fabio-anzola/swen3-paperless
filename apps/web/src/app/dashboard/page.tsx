@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-4xl p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* My Documents Box */}

@@ -1,13 +1,17 @@
 package at.technikum.swen3;
-import at.technikum.swen3.entity.Document;
-import at.technikum.swen3.entity.User;
-import at.technikum.swen3.repository.DocumentRepository;
-import at.technikum.swen3.repository.UserRepository;
-import at.technikum.swen3.service.DocumentService;
-import at.technikum.swen3.service.dtos.document.DocumentDto;
-import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
-import at.technikum.swen3.service.mapper.DocumentMapper;
-import at.technikum.swen3.service.model.DocumentDownload;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -16,17 +20,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import at.technikum.swen3.entity.Document;
+import at.technikum.swen3.entity.User;
+import at.technikum.swen3.kafka.KafkaProducerService;
+import at.technikum.swen3.repository.DocumentRepository;
+import at.technikum.swen3.repository.UserRepository;
+import at.technikum.swen3.service.DocumentService;
+import at.technikum.swen3.service.dtos.document.DocumentDto;
+import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
+import at.technikum.swen3.service.mapper.DocumentMapper;
+import at.technikum.swen3.service.model.DocumentDownload;
 
 class DocumentServiceTest {
 
     private DocumentRepository documentRepository;
     private UserRepository userRepository;
     private DocumentMapper documentMapper;
+    private KafkaProducerService kafkaProducerService;
+    private ObjectMapper objectMapper;
     private DocumentService documentService;
 
     @BeforeEach
@@ -34,7 +47,9 @@ class DocumentServiceTest {
         documentRepository = mock(DocumentRepository.class);
         userRepository = mock(UserRepository.class);
         documentMapper = mock(DocumentMapper.class);
-        documentService = new DocumentService(documentRepository, userRepository, documentMapper, null, null);
+        kafkaProducerService = mock(KafkaProducerService.class);
+        objectMapper = mock(ObjectMapper.class);
+        documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper);
     }
 
     @Test
@@ -106,7 +121,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void upload_savesDocument_andReturnsDto() {
+    void upload_savesDocument_andReturnsDto() throws Exception {
         Long userId = 1L;
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
@@ -122,11 +137,13 @@ class DocumentServiceTest {
         when(documentRepository.save(any(Document.class))).thenReturn(doc);
         DocumentDto dto = mock(DocumentDto.class);
         when(documentMapper.toDto(any(Document.class))).thenReturn(dto);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"TODO-S3KEY\"}");
 
         DocumentDto result = documentService.upload(userId, file, meta);
 
         assertEquals(dto, result);
         verify(documentRepository).save(any(Document.class));
+        verify(kafkaProducerService).sendMessage(anyString(), anyString());
     }
 
     @Test
@@ -179,5 +196,148 @@ class DocumentServiceTest {
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
 
         assertThrows(ResponseStatusException.class, () -> documentService.delete(userId, docId));
+    }
+
+    @Test
+    void getMeta_throwsNotFound_whenDocumentDoesNotExist() {
+        Long userId = 1L;
+        Long docId = 999L;
+        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class, () -> documentService.getMeta(userId, docId));
+    }
+
+    @Test
+    void download_throwsNotFound_whenDocumentDoesNotExist() {
+        Long userId = 1L;
+        Long docId = 999L;
+        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class, () -> documentService.download(userId, docId));
+    }
+
+    @Test
+    void download_throwsForbidden_whenNotOwner() {
+        Long userId = 1L;
+        Long docId = 2L;
+        Document doc = new Document();
+        User user = new User();
+        user.setId(99L);
+        doc.setOwner(user);
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+
+        assertThrows(ResponseStatusException.class, () -> documentService.download(userId, docId));
+    }
+
+    @Test
+    void upload_throwsBadRequest_whenFileIsEmpty() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(true);
+
+        assertThrows(ResponseStatusException.class, () -> documentService.upload(1L, file, null));
+    }
+
+    @Test
+    void upload_usesCustomName_whenProvidedInMeta() throws Exception {
+        Long userId = 1L;
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getOriginalFilename()).thenReturn("original.txt");
+        User user = new User();
+        user.setId(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        DocumentUploadDto meta = mock(DocumentUploadDto.class);
+        when(meta.name()).thenReturn("custom-name.txt");
+        Document doc = new Document();
+        doc.setOwner(user);
+        doc.setName("custom-name.txt");
+        when(documentRepository.save(any(Document.class))).thenReturn(doc);
+        DocumentDto dto = mock(DocumentDto.class);
+        when(documentMapper.toDto(any(Document.class))).thenReturn(dto);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"TODO-S3KEY\"}");
+
+        DocumentDto result = documentService.upload(userId, file, meta);
+
+        assertEquals(dto, result);
+        verify(documentRepository).save(any(Document.class));
+    }
+
+    @Test
+    void upload_throwsUnauthorized_whenUserNotFound() {
+        Long userId = 999L;
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.isEmpty()).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class, () -> documentService.upload(userId, file, null));
+    }
+
+    @Test
+    void updateMeta_throwsNotFound_whenDocumentDoesNotExist() {
+        Long userId = 1L;
+        Long docId = 999L;
+        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+        DocumentUploadDto meta = mock(DocumentUploadDto.class);
+
+        assertThrows(ResponseStatusException.class, () -> documentService.updateMeta(userId, docId, meta));
+    }
+
+    @Test
+    void updateMeta_throwsForbidden_whenNotOwner() {
+        Long userId = 1L;
+        Long docId = 2L;
+        Document doc = new Document();
+        User user = new User();
+        user.setId(99L);
+        doc.setOwner(user);
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        DocumentUploadDto meta = mock(DocumentUploadDto.class);
+
+        assertThrows(ResponseStatusException.class, () -> documentService.updateMeta(userId, docId, meta));
+    }
+
+    @Test
+    void delete_throwsNotFound_whenDocumentDoesNotExist() {
+        Long userId = 1L;
+        Long docId = 999L;
+        when(documentRepository.findById(docId)).thenReturn(Optional.empty());
+
+        assertThrows(ResponseStatusException.class, () -> documentService.delete(userId, docId));
+    }
+
+    @Test
+    void download_returnsCorrectContentType_forPdfFile() {
+        Long userId = 1L;
+        Long docId = 2L;
+        Document doc = new Document();
+        User user = new User();
+        user.setId(userId);
+        doc.setOwner(user);
+        doc.setName("document.pdf");
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+
+        DocumentDownload download = documentService.download(userId, docId);
+
+        assertNotNull(download);
+        assertEquals("document.pdf", download.filename());
+        assertEquals("application/pdf", download.contentType());
+    }
+
+    @Test
+    void updateMeta_handlesNullMeta() {
+        Long userId = 1L;
+        Long docId = 2L;
+        Document doc = new Document();
+        User user = new User();
+        user.setId(userId);
+        doc.setOwner(user);
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        DocumentDto dto = mock(DocumentDto.class);
+        when(documentMapper.toDto(doc)).thenReturn(dto);
+
+        DocumentDto result = documentService.updateMeta(userId, docId, null);
+
+        assertEquals(dto, result);
+        verify(documentMapper, never()).updateEntityFromUpload(any(), any());
     }
 }
