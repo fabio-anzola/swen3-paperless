@@ -2,6 +2,20 @@
 
 A Spring Boot application for document management with PostgreSQL database and pgAdmin interface.
 
+## Architecture
+
+![System Architecture](artifacts/architecture.svg)
+
+The system follows a microservices architecture with the following components:
+
+- **Next.js Web Frontend** (Port 3000): User interface for document management
+- **Spring Boot REST API** (Port 4000): Backend API handling business logic
+- **Kafka Message Queue** (Port 9092): Event streaming for OCR processing
+- **OCR Worker**: Scalable workers for document text extraction
+- **PostgreSQL Database** (Port 5455): Data persistence
+- **pgAdmin** (Port 5050): Database administration interface
+- **File Storage**: Document and file storage system
+
 ## Prerequisites
 
 - Docker and Docker Compose installed on your system
