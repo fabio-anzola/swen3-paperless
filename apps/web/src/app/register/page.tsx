@@ -43,26 +43,26 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <main className="mx-auto mt-24 max-w-md rounded-2xl bg-white p-6 shadow">
+      <main className="mx-auto mt-24 max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <div className="text-center">
-          <h1 className="mb-4 text-2xl font-semibold text-green-600">
+          <h1 className="mb-4 text-3xl font-bold text-green-600">
             Registration Successful!
           </h1>
-          <p className="mb-4 text-gray-600">
+          <p className="mb-4 text-gray-700">
             Your account has been created successfully.
           </p>
-          <p className="text-sm text-gray-500">Redirecting to login page...</p>
+          <p className="text-sm text-gray-600">Redirecting to login page...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto mt-24 max-w-md rounded-2xl bg-white p-6 shadow">
-      <h1 className="mb-4 text-2xl font-semibold">Create Account</h1>
-      <form onSubmit={onSubmit} className="space-y-3">
+    <main className="mx-auto mt-24 max-w-md rounded-2xl bg-white p-8 shadow-lg">
+      <h1 className="mb-6 text-3xl font-bold text-gray-900">Create Account</h1>
+      <form onSubmit={onSubmit} className="space-y-4">
         <input
-          className="w-full rounded border px-3 py-2"
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -70,7 +70,7 @@ export default function RegisterPage() {
           required
         />
         <input
-          className="w-full rounded border px-3 py-2"
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Password"
           type="password"
           value={password}
@@ -79,7 +79,7 @@ export default function RegisterPage() {
           required
         />
         <input
-          className="w-full rounded border px-3 py-2"
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Confirm Password"
           type="password"
           value={confirmPassword}
@@ -87,18 +87,21 @@ export default function RegisterPage() {
           autoComplete="new-password"
           required
         />
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-sm text-red-600 font-medium">{err}</p>}
         <button
-          className="w-full rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="w-full rounded-lg bg-black px-4 py-3 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={loading || !username || !password || !confirmPassword}
         >
           {loading ? "Creating Account…" : "Create Account"}
         </button>
       </form>
-      <div className="mt-4 text-center">
-        <p className="text-sm text-gray-600">
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-700">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link
+            href="/login"
+            className="text-blue-600 font-medium hover:underline"
+          >
             Sign in
           </Link>
         </p>

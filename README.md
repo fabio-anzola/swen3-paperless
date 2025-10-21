@@ -49,3 +49,85 @@ The application uses PostgreSQL with the following configuration:
 - **Username**: `paperless_user`
 - **Password**: `paperless_pw`
 - **Port**: 5455 (host) → 5432 (container)
+
+## Testing and Code Coverage
+
+### Running Tests
+
+The project uses JUnit for testing and JaCoCo for code coverage analysis.
+
+#### REST API Module
+
+```bash
+# Navigate to the REST API directory
+cd apps/rest
+
+# Run tests
+mvnw test
+
+# Run tests with code coverage report
+mvnw clean test
+
+# Generate coverage report without running tests again
+mvnw jacoco:report
+```
+
+#### Worker Module
+
+```bash
+# Navigate to the worker directory
+cd apps/worker
+
+# Run tests
+mvn test
+
+# Run tests with code coverage report
+mvn clean test
+
+# Generate coverage report without running tests again
+mvn jacoco:report
+```
+
+### Viewing Code Coverage Reports
+
+After running tests, JaCoCo generates HTML reports that you can view in your browser:
+
+- **REST API Coverage Report**: `apps/rest/target/site/jacoco/index.html`
+- **Worker Coverage Report**: `apps/worker/target/site/jacoco/index.html`
+
+Open these files in your web browser to see detailed coverage metrics including:
+
+- Line coverage
+- Branch coverage
+- Method coverage
+- Class coverage
+
+### Code Coverage Thresholds
+
+The project is configured with a minimum code coverage threshold of 50% at the package level. Builds will fail if coverage falls below this threshold.
+
+To customize coverage thresholds, edit the JaCoCo plugin configuration in the respective `pom.xml` files.
+
+### Running Coverage Check
+
+To check if your code coverage meets the minimum threshold, you must first run tests to generate the coverage data:
+
+```bash
+# REST API - Run tests first, then check coverage
+cd apps/rest
+mvnw clean test
+mvnw jacoco:check
+
+# Or run both in one command
+mvnw clean test jacoco:check
+
+# Worker - Run tests first, then check coverage
+cd apps/worker
+mvn clean test
+mvn jacoco:check
+
+# Or run both in one command
+mvn clean test jacoco:check
+```
+
+**Note**: The `jacoco:check` goal requires the coverage data file (`jacoco.exec`) which is generated during test execution. If you run `jacoco:check` without running tests first, it will skip the check.

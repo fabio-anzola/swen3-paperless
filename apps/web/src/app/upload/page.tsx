@@ -62,28 +62,28 @@ export default function UploadPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold mb-4">Upload Documents</h1>
+      <h1 className="text-3xl font-bold text-white mb-6">Upload Documents</h1>
 
       <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
         <form onSubmit={handleUpload} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Select PDF File
             </label>
             <input
               type="file"
               accept=".pdf,application/pdf"
               onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Only PDF files are supported
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Document Name (optional)
             </label>
             <input
@@ -91,7 +91,7 @@ export default function UploadPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter document name or leave empty to use filename"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
           </div>
 
