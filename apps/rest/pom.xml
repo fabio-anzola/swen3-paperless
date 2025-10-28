@@ -131,6 +131,13 @@
 		    <version>5.2.0</version>
 		    <scope>test</scope>
 		</dependency>
+
+		<!-- MinIO / S3 Client -->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>8.5.7</version>
+		</dependency>
 	</dependencies>
 
 	<build>

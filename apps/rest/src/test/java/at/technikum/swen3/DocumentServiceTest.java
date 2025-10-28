@@ -28,6 +28,7 @@ import at.technikum.swen3.kafka.KafkaProducerService;
 import at.technikum.swen3.repository.DocumentRepository;
 import at.technikum.swen3.repository.UserRepository;
 import at.technikum.swen3.service.DocumentService;
+import at.technikum.swen3.service.S3Service;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.mapper.DocumentMapper;
@@ -40,6 +41,7 @@ class DocumentServiceTest {
     private DocumentMapper documentMapper;
     private KafkaProducerService kafkaProducerService;
     private ObjectMapper objectMapper;
+    private S3Service s3Service;
     private DocumentService documentService;
 
     @BeforeEach
@@ -49,7 +51,8 @@ class DocumentServiceTest {
         documentMapper = mock(DocumentMapper.class);
         kafkaProducerService = mock(KafkaProducerService.class);
         objectMapper = mock(ObjectMapper.class);
-        documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper);
+        s3Service = mock(S3Service.class);
+        documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper, s3Service);
     }
 
     @Test
@@ -102,7 +105,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void download_returnsDocumentDownload_whenOwner() {
+    void download_returnsDocumentDownload_whenOwner() throws Exception {
         Long userId = 1L;
         Long docId = 2L;
         Document doc = new Document();
@@ -110,7 +113,15 @@ class DocumentServiceTest {
         user.setId(userId);
         doc.setOwner(user);
         doc.setName("test.txt");
+        doc.setS3Key("s3-key-123");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        
+        // Mock S3Service
+        io.minio.StatObjectResponse metadata = mock(io.minio.StatObjectResponse.class);
+        when(metadata.contentType()).thenReturn("text/plain");
+        when(metadata.size()).thenReturn(100L);
+        when(s3Service.getObjectMetadata("s3-key-123")).thenReturn(metadata);
+        when(s3Service.downloadFile("s3-key-123")).thenReturn(new java.io.ByteArrayInputStream("test content".getBytes()));
 
         DocumentDownload download = documentService.download(userId, docId);
 
@@ -131,19 +142,25 @@ class DocumentServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         DocumentUploadDto meta = mock(DocumentUploadDto.class);
         when(meta.name()).thenReturn(null);
+        
+        // Mock S3Service
+        when(s3Service.uploadFile(file)).thenReturn("s3-key-123");
+        
         Document doc = new Document();
         doc.setOwner(user);
         doc.setName("file.txt");
+        doc.setS3Key("s3-key-123");
         when(documentRepository.save(any(Document.class))).thenReturn(doc);
         DocumentDto dto = mock(DocumentDto.class);
         when(documentMapper.toDto(any(Document.class))).thenReturn(dto);
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"TODO-S3KEY\"}");
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"s3-key-123\"}");
 
         DocumentDto result = documentService.upload(userId, file, meta);
 
         assertEquals(dto, result);
         verify(documentRepository).save(any(Document.class));
         verify(kafkaProducerService).sendMessage(anyString(), anyString());
+        verify(s3Service).uploadFile(file);
     }
 
     @Test
@@ -178,11 +195,13 @@ class DocumentServiceTest {
         User user = new User();
         user.setId(userId);
         doc.setOwner(user);
+        doc.setS3Key("s3-key-789");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
 
         documentService.delete(userId, docId);
 
         verify(documentRepository).delete(doc);
+        verify(s3Service).deleteFile("s3-key-789");
     }
 
     @Test
@@ -224,6 +243,7 @@ class DocumentServiceTest {
         User user = new User();
         user.setId(99L);
         doc.setOwner(user);
+        doc.setS3Key("s3-key-test");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
 
         assertThrows(ResponseStatusException.class, () -> documentService.download(userId, docId));
@@ -248,18 +268,24 @@ class DocumentServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         DocumentUploadDto meta = mock(DocumentUploadDto.class);
         when(meta.name()).thenReturn("custom-name.txt");
+        
+        // Mock S3Service
+        when(s3Service.uploadFile(file)).thenReturn("s3-key-456");
+        
         Document doc = new Document();
         doc.setOwner(user);
         doc.setName("custom-name.txt");
+        doc.setS3Key("s3-key-456");
         when(documentRepository.save(any(Document.class))).thenReturn(doc);
         DocumentDto dto = mock(DocumentDto.class);
         when(documentMapper.toDto(any(Document.class))).thenReturn(dto);
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"TODO-S3KEY\"}");
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"s3Key\":\"s3-key-456\"}");
 
         DocumentDto result = documentService.upload(userId, file, meta);
 
         assertEquals(dto, result);
         verify(documentRepository).save(any(Document.class));
+        verify(s3Service).uploadFile(file);
     }
 
     @Test
@@ -306,7 +332,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void download_returnsCorrectContentType_forPdfFile() {
+    void download_returnsCorrectContentType_forPdfFile() throws Exception {
         Long userId = 1L;
         Long docId = 2L;
         Document doc = new Document();
@@ -314,7 +340,15 @@ class DocumentServiceTest {
         user.setId(userId);
         doc.setOwner(user);
         doc.setName("document.pdf");
+        doc.setS3Key("s3-key-pdf");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        
+        // Mock S3Service
+        io.minio.StatObjectResponse metadata = mock(io.minio.StatObjectResponse.class);
+        when(metadata.contentType()).thenReturn("application/pdf");
+        when(metadata.size()).thenReturn(200L);
+        when(s3Service.getObjectMetadata("s3-key-pdf")).thenReturn(metadata);
+        when(s3Service.downloadFile("s3-key-pdf")).thenReturn(new java.io.ByteArrayInputStream("pdf content".getBytes()));
 
         DocumentDownload download = documentService.download(userId, docId);
 
