@@ -9,6 +9,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/paperlessdb
       - SPRING_DATASOURCE_USERNAME=paperless_user
@@ -23,6 +25,11 @@ services:
       - SPRING_KAFKA_CONSUMER_CLIENT_ID=api-client-id
       - KAFKA_TOPIC_OCR=ocr
       - KAFKA_TOPIC_RESULT=result
+      # MinIO / S3 settings
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=uploaded-documents
     networks:
       - app-network
 
@@ -139,6 +146,7 @@ services:
     restart: always
     depends_on:
       - kafka
+      - minio
     environment:
       BOOTSTRAP_SERVERS: kafka:9092
       GROUP_ID: demo-consumer-group
@@ -147,12 +155,17 @@ services:
       AUTO_OFFSET_RESET: earliest
       ENABLE_AUTO_COMMIT: "false"
       POLL_MS: "1000"
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: uploaded-documents
     networks:
       - app-network
 
 volumes:
   postgres_data:
   pgadmin_data:
+  minio_data:
 
 networks:
   app-network:

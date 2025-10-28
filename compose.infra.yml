@@ -92,6 +92,7 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  minio_data:
 
 networks:
   app-network:
