@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import at.technikum.swen3.worker.config.KafkaConfig;
 import at.technikum.swen3.worker.config.WorkerConfig;
+import at.technikum.swen3.worker.service.S3Service;
 
 public class WorkerApplication {
   private static final Logger log = LoggerFactory.getLogger(WorkerApplication.class);
@@ -22,6 +23,8 @@ public class WorkerApplication {
     log.info("Starting Kafka Worker Application");
 
     WorkerConfig config = new WorkerConfig();
+    S3Service s3Service = new S3Service(config.minioUrl, config.minioAccessKey, 
+                                         config.minioSecretKey, config.minioBucketName);
 
     try (KafkaConsumer<String, String> consumer = KafkaConfig.createConsumer(
         config.bootstrapServers, config.groupId, config.autoOffsetReset, config.enableAutoCommit);
@@ -37,7 +40,7 @@ public class WorkerApplication {
         boolean allOk = true;
         for (ConsumerRecord<String, String> record : records) {
           try {
-            MessageProcessor.process(record, producer, config.outputTopic);
+            MessageProcessor.process(record, producer, config.outputTopic, s3Service);
           } catch (Exception e) {
             allOk = false;
             log.error("Failed to process record, not committing", e);
