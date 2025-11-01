@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import at.technikum.swen3.worker.config.KafkaConfig;
 import at.technikum.swen3.worker.config.WorkerConfig;
+import at.technikum.swen3.worker.service.FileDownloadException;
 import at.technikum.swen3.worker.service.OcrProcessingException;
 import at.technikum.swen3.worker.service.OcrService;
 import at.technikum.swen3.worker.service.S3Service;
@@ -47,6 +48,9 @@ public class WorkerApplication {
         for (ConsumerRecord<String, String> record : records) {
           try {
             messageProcessor.process(record, producer, config.outputTopic);
+          } catch (FileDownloadException e) {
+            allOk = false;
+            log.error("Failed to download file for record, not committing", e);
           } catch (OcrProcessingException e) {
             allOk = false;
             log.error("Failed to process record due to OCR error, not committing", e);

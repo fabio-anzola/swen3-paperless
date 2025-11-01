@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import at.technikum.swen3.worker.dto.OcrTopicMessageDto;
 import at.technikum.swen3.worker.dto.ResultTopicMessageDto;
+import at.technikum.swen3.worker.service.FileDownloadException;
 import at.technikum.swen3.worker.service.OcrProcessingException;
 import at.technikum.swen3.worker.service.OcrService;
 import at.technikum.swen3.worker.service.S3Service;
@@ -36,7 +37,7 @@ public class MessageProcessor {
 
     public void process(ConsumerRecord<String, String> record,
                         KafkaProducer<String, String> producer,
-                        String outputTopic) {
+                        String outputTopic) throws OcrProcessingException, FileDownloadException {
         logger.info("Received message: {}", record.value());
 
         OcrTopicMessageDto input = parseMessage(record.value());

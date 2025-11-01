@@ -26,7 +26,7 @@ public class S3Service {
         logger.info("S3Service initialized with URL: {}, bucket: {}", minioUrl, bucketName);
     }
 
-    public InputStream downloadFile(String s3Key) {
+    public InputStream downloadFile(String s3Key) throws FileDownloadException {
         try {
             logger.info("Downloading file from S3 with key: {}", s3Key);
             return minioClient.getObject(
@@ -37,11 +37,11 @@ public class S3Service {
             );
         } catch (Exception e) {
             logger.error("Error downloading file from S3: {}", s3Key, e);
-            throw new RuntimeException("Failed to download file from S3", e);
+            throw new FileDownloadException("Failed to download file from S3", e);
         }
     }
 
-    public StatObjectResponse getObjectMetadata(String s3Key) {
+    public StatObjectResponse getObjectMetadata(String s3Key) throws FileDownloadException {
         try {
             return minioClient.statObject(
                     StatObjectArgs.builder()
@@ -51,7 +51,7 @@ public class S3Service {
             );
         } catch (Exception e) {
             logger.error("Error getting object metadata from S3: {}", s3Key, e);
-            throw new RuntimeException("Failed to get object metadata from S3", e);
+            throw new FileDownloadException("Failed to get object metadata from S3", e);
         }
     }
 }

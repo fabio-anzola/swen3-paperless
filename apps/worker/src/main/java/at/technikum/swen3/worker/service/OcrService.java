@@ -30,7 +30,7 @@ public class OcrService {
         this.language = language;
     }
 
-    public String extractText(InputStream inputStream, String objectKey) {
+    public String extractText(InputStream inputStream, String objectKey) throws OcrProcessingException {
         try {
             byte[] data = toByteArray(inputStream);
             if (data.length == 0) {
@@ -58,7 +58,7 @@ public class OcrService {
         }
     }
 
-    private String runOcrOnImage(BufferedImage image, String objectKey) {
+    private String runOcrOnImage(BufferedImage image, String objectKey) throws OcrProcessingException {
         try {
             String text = buildTesseract().doOCR(image);
             logger.info("Extracted {} characters of text from {}", text != null ? text.length() : 0, objectKey);
@@ -68,7 +68,7 @@ public class OcrService {
         }
     }
 
-    private String runOcrOnPdf(byte[] data, String objectKey) {
+    private String runOcrOnPdf(byte[] data, String objectKey) throws OcrProcessingException {
         try (PDDocument document = PDDocument.load(data)) {
             PDFRenderer renderer = new PDFRenderer(document);
             StringBuilder result = new StringBuilder();
