@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import at.technikum.swen3.worker.config.KafkaConfig;
 import at.technikum.swen3.worker.config.WorkerConfig;
+import at.technikum.swen3.worker.service.OcrProcessingException;
+import at.technikum.swen3.worker.service.OcrService;
 import at.technikum.swen3.worker.service.S3Service;
 
 public class WorkerApplication {
@@ -23,8 +25,12 @@ public class WorkerApplication {
     log.info("Starting Kafka Worker Application");
 
     WorkerConfig config = new WorkerConfig();
-    S3Service s3Service = new S3Service(config.minioUrl, config.minioAccessKey, 
-                                         config.minioSecretKey, config.minioBucketName);
+    S3Service s3Service = new S3Service(config.minioUrl, config.minioAccessKey,
+        config.minioSecretKey, config.minioBucketName);
+    OcrService ocrService = new OcrService(config.tessdataPath, config.tesseractLanguage);
+    MessageProcessor messageProcessor = new MessageProcessor(s3Service, ocrService);
+    log.info("Initialized OCR with tessdataPath={} language={} bucket={}",
+        config.tessdataPath, config.tesseractLanguage, config.minioBucketName);
 
     try (KafkaConsumer<String, String> consumer = KafkaConfig.createConsumer(
         config.bootstrapServers, config.groupId, config.autoOffsetReset, config.enableAutoCommit);
@@ -40,8 +46,11 @@ public class WorkerApplication {
         boolean allOk = true;
         for (ConsumerRecord<String, String> record : records) {
           try {
-            MessageProcessor.process(record, producer, config.outputTopic, s3Service);
-          } catch (Exception e) {
+            messageProcessor.process(record, producer, config.outputTopic);
+          } catch (OcrProcessingException e) {
+            allOk = false;
+            log.error("Failed to process record due to OCR error, not committing", e);
+          } catch (RuntimeException e) {
             allOk = false;
             log.error("Failed to process record, not committing", e);
           }
