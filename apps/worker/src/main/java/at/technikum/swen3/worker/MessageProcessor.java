@@ -29,7 +29,7 @@ public class MessageProcessor {
         this(s3Service, ocrService, new ObjectMapper());
     }
 
-    MessageProcessor(S3Service s3Service, OcrService ocrService, ObjectMapper objectMapper) {
+    public MessageProcessor(S3Service s3Service, OcrService ocrService, ObjectMapper objectMapper) {
         this.s3Service = s3Service;
         this.ocrService = ocrService;
         this.objectMapper = objectMapper;
