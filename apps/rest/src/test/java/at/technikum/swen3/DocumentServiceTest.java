@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -45,7 +46,7 @@ class DocumentServiceTest {
     private DocumentService documentService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         documentRepository = mock(DocumentRepository.class);
         userRepository = mock(UserRepository.class);
         documentMapper = mock(DocumentMapper.class);
@@ -53,6 +54,10 @@ class DocumentServiceTest {
         objectMapper = mock(ObjectMapper.class);
         s3Service = mock(S3Service.class);
         documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper, s3Service);
+
+        Field topicField = DocumentService.class.getDeclaredField("ocrTopic");
+        topicField.setAccessible(true);
+        topicField.set(documentService, "documents");
     }
 
     @Test
@@ -115,7 +120,7 @@ class DocumentServiceTest {
         doc.setName("test.txt");
         doc.setS3Key("s3-key-123");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        
+
         // Mock S3Service
         io.minio.StatObjectResponse metadata = mock(io.minio.StatObjectResponse.class);
         when(metadata.contentType()).thenReturn("text/plain");
@@ -142,10 +147,10 @@ class DocumentServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         DocumentUploadDto meta = mock(DocumentUploadDto.class);
         when(meta.name()).thenReturn(null);
-        
+
         // Mock S3Service
         when(s3Service.uploadFile(file)).thenReturn("s3-key-123");
-        
+
         Document doc = new Document();
         doc.setOwner(user);
         doc.setName("file.txt");
@@ -268,10 +273,10 @@ class DocumentServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         DocumentUploadDto meta = mock(DocumentUploadDto.class);
         when(meta.name()).thenReturn("custom-name.txt");
-        
+
         // Mock S3Service
         when(s3Service.uploadFile(file)).thenReturn("s3-key-456");
-        
+
         Document doc = new Document();
         doc.setOwner(user);
         doc.setName("custom-name.txt");
@@ -342,7 +347,7 @@ class DocumentServiceTest {
         doc.setName("document.pdf");
         doc.setS3Key("s3-key-pdf");
         when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
-        
+
         // Mock S3Service
         io.minio.StatObjectResponse metadata = mock(io.minio.StatObjectResponse.class);
         when(metadata.contentType()).thenReturn("application/pdf");
