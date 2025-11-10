@@ -1,17 +1,5 @@
 package at.technikum.swen3.service;
 
-import at.technikum.swen3.entity.Document;
-import at.technikum.swen3.entity.User;
-import at.technikum.swen3.kafka.KafkaProducerService;
-import at.technikum.swen3.repository.DocumentRepository;
-import at.technikum.swen3.repository.UserRepository;
-import at.technikum.swen3.service.dtos.OcrTopicMessageDto;
-import at.technikum.swen3.service.dtos.document.DocumentDto;
-import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
-import at.technikum.swen3.service.mapper.DocumentMapper;
-import at.technikum.swen3.service.model.DocumentDownload;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -23,6 +11,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import at.technikum.swen3.entity.Document;
+import at.technikum.swen3.entity.User;
+import at.technikum.swen3.kafka.KafkaProducerService;
+import at.technikum.swen3.repository.DocumentRepository;
+import at.technikum.swen3.repository.UserRepository;
+import at.technikum.swen3.service.dtos.OcrTopicMessageDto;
+import at.technikum.swen3.service.dtos.document.DocumentDto;
+import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
+import at.technikum.swen3.service.mapper.DocumentMapper;
+import at.technikum.swen3.service.model.DocumentDownload;
+import io.minio.StatObjectResponse;
+
 @Service
 @Transactional
 public class DocumentService implements IDocumentService {
@@ -32,16 +35,18 @@ public class DocumentService implements IDocumentService {
     private final DocumentMapper documentMapper;
     private final KafkaProducerService kafkaProducerService;
     private final ObjectMapper objectMapper;
+    private final S3Service s3Service;
     @Value("${kafka.topic.ocr}")
     private String ocrTopic;
 
 
-    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper, KafkaProducerService kafkaProducerService, ObjectMapper objectMapper) {
+    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper, KafkaProducerService kafkaProducerService, ObjectMapper objectMapper, S3Service s3Service) {
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.documentMapper = documentMapper;
         this.kafkaProducerService = kafkaProducerService;
         this.objectMapper = objectMapper;
+        this.s3Service = s3Service;
     }
 
     @Override
@@ -64,9 +69,13 @@ public class DocumentService implements IDocumentService {
         Document d = documentRepository.findById(id).orElseThrow(this::notFound);
         enforceOwner(userId, d);
 
-        // TODO: replace with actual S3 download later
-        Resource dummy = new ByteArrayResource("Not yet implemented".getBytes());
-        return new DocumentDownload(dummy, "text/plain", d.getName(), (long) "Not yet implemented".length());
+        try {
+            StatObjectResponse metadata = s3Service.getObjectMetadata(d.getS3Key());
+            Resource resource = new ByteArrayResource(s3Service.downloadFile(d.getS3Key()).readAllBytes());
+            return new DocumentDownload(resource, metadata.contentType(), d.getName(), metadata.size());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download file from S3", e);
+        }
     }
 
     @Override
@@ -79,9 +88,8 @@ public class DocumentService implements IDocumentService {
         d.setOwner(owner);
         d.setName(meta != null && meta.name() != null ? meta.name() : file.getOriginalFilename());
 
-        // TODO: upload file to S3 and set generated key
-        // TODO: load key from properties
-        d.setS3Key("TODO-S3KEY");
+        String s3Key = s3Service.uploadFile(file);
+        d.setS3Key(s3Key);
 
         d = documentRepository.save(d);
 
@@ -107,7 +115,7 @@ public class DocumentService implements IDocumentService {
         Document d = documentRepository.findById(id).orElseThrow(this::notFound);
         enforceOwner(userId, d);
 
-        // TODO: delete object from S3
+        s3Service.deleteFile(d.getS3Key());
 
         documentRepository.delete(d);
     }

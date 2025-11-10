@@ -55,4 +55,20 @@ class UserServiceTest {
         assertThrows(EntityNotFoundException.class, () -> userService.deleteUser(userId));
         verify(userRepository, never()).delete(any());
     }
+
+    @Test
+    void existsByUsername_shouldReturnTrue_whenUserPresent() {
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(new User()));
+
+        assertTrue(userService.existsByUsername("alice"));
+        verify(userRepository).findByUsername("alice");
+    }
+
+    @Test
+    void existsByUsername_shouldReturnFalse_whenUserMissing() {
+        when(userRepository.findByUsername("bob")).thenReturn(Optional.empty());
+
+        assertFalse(userService.existsByUsername("bob"));
+        verify(userRepository).findByUsername("bob");
+    }
 }

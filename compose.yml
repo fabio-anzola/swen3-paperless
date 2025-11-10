@@ -9,6 +9,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/paperlessdb
       - SPRING_DATASOURCE_USERNAME=paperless_user
@@ -23,6 +25,11 @@ services:
       - SPRING_KAFKA_CONSUMER_CLIENT_ID=api-client-id
       - KAFKA_TOPIC_OCR=ocr
       - KAFKA_TOPIC_RESULT=result
+      # MinIO / S3 settings
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=uploaded-documents
     networks:
       - app-network
 
@@ -99,11 +106,47 @@ services:
     networks:
       - app-network
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   worker:
     build: ./apps/worker
     restart: always
     depends_on:
       - kafka
+      - minio
     environment:
       BOOTSTRAP_SERVERS: kafka:9092
       GROUP_ID: demo-consumer-group
@@ -112,12 +155,17 @@ services:
       AUTO_OFFSET_RESET: earliest
       ENABLE_AUTO_COMMIT: "false"
       POLL_MS: "1000"
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: uploaded-documents
     networks:
       - app-network
 
 volumes:
   postgres_data:
   pgadmin_data:
+  minio_data:
 
 networks:
   app-network:
