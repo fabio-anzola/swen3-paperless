@@ -29,7 +29,7 @@ public class MessageProcessor {
         this(s3Service, ocrService, new ObjectMapper());
     }
 
-    MessageProcessor(S3Service s3Service, OcrService ocrService, ObjectMapper objectMapper) {
+    public MessageProcessor(S3Service s3Service, OcrService ocrService, ObjectMapper objectMapper) {
         this.s3Service = s3Service;
         this.ocrService = ocrService;
         this.objectMapper = objectMapper;
@@ -68,7 +68,7 @@ public class MessageProcessor {
         }
     }
 
-    private OcrTopicMessageDto parseMessage(String payload) {
+    private OcrTopicMessageDto parseMessage(String payload) throws OcrProcessingException {
         try {
             return objectMapper.readValue(payload, OcrTopicMessageDto.class);
         } catch (JsonProcessingException e) {
@@ -76,7 +76,7 @@ public class MessageProcessor {
         }
     }
 
-    private String serializeResult(ResultTopicMessageDto output) {
+    private String serializeResult(ResultTopicMessageDto output) throws OcrProcessingException {
         try {
             return objectMapper.writeValueAsString(output);
         } catch (JsonProcessingException e) {
