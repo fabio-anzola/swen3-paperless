@@ -45,7 +45,7 @@ class UserEndpointTest {
         createdUser.setId(1L);
         UserDto userDto = mock(UserDto.class);
 
-        when(userService.findByUsername("testuser")).thenReturn(null);
+        when(userService.existsByUsername("testuser")).thenReturn(false);
         when(userMapper.userCreateDtoToUser(userCreateDto)).thenReturn(user);
         when(userService.registerUser(user)).thenReturn(createdUser);
         when(userMapper.userToUserDto(createdUser)).thenReturn(userDto);
@@ -53,7 +53,7 @@ class UserEndpointTest {
         UserDto result = userEndpoint.createUser(userCreateDto);
 
         assertEquals(userDto, result);
-        verify(userService).findByUsername("testuser");
+        verify(userService).existsByUsername("testuser");
         verify(userMapper).userCreateDtoToUser(userCreateDto);
         verify(userService).registerUser(user);
         verify(userMapper).userToUserDto(createdUser);
@@ -63,7 +63,7 @@ class UserEndpointTest {
     void createUser_shouldThrowUserCreationException_whenUserAlreadyExists() {
         UserCreateDto userCreateDto = mock(UserCreateDto.class);
         when(userCreateDto.username()).thenReturn("exists");
-        when(userService.findByUsername("exists")).thenReturn(new User());
+        when(userService.existsByUsername("exists")).thenReturn(true);
 
         UserCreationException exception = assertThrows(
                 UserCreationException.class,
@@ -71,7 +71,7 @@ class UserEndpointTest {
         );
 
         assertTrue(exception.getMessage().contains("user already exists"));
-        verify(userService).findByUsername("exists");
+        verify(userService).existsByUsername("exists");
         verify(userMapper, never()).userCreateDtoToUser(any());
     }
 

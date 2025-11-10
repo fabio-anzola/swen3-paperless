@@ -36,4 +36,9 @@ public class UserService implements IUserService {
         .orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
   }
 
+  @Override
+  public boolean existsByUsername(String username) {
+    return userRepository.findByUsername(username).isPresent();
+  }
+
 }

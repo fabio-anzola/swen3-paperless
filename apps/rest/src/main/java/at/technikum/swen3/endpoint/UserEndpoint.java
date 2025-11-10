@@ -43,7 +43,7 @@ public class UserEndpoint {
         LOG.info("Creating new user: {}", user.username());
 
         try {
-            if (userService.findByUsername(user.username()) != null) {
+            if (userService.existsByUsername(user.username())) {
                 throw new UserCreationException("user already exists");
             }
             User userDto = userMapper.userCreateDtoToUser(user);

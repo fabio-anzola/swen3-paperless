@@ -6,4 +6,5 @@ public interface IUserService {
   User registerUser(User user);
   User deleteUser(Long id);
   User findByUsername(String username);
+  boolean existsByUsername(String username);
 }
