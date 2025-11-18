@@ -10,6 +10,7 @@ The system follows a microservices architecture with the following components:
 
 - **Next.js Web Frontend** (Port 3000): User interface for document management
 - **Spring Boot REST API** (Port 4000): Backend API handling business logic
+- **Gemini Summarization Service** (Port 4100): Accepts documents and returns Gemini-generated summaries
 - **Kafka Message Queue** (Port 9092): Event streaming for OCR processing
 - **OCR Worker**: Scalable workers for document text extraction
 - **PostgreSQL Database** (Port 5455): Data persistence
@@ -40,6 +41,20 @@ docker compose up --build --scale worker=3
   - Email: `admin@admin.com`
   - Password: `admin`
 - **PostgreSQL Database**: localhost:5455 (from host machine)
+- **Gemini Summarization Service**: http://localhost:4100/api/v1/summarize
+
+### Gemini Service
+
+- Set the `GEMINI_API_KEY` environment variable before starting `docker compose` so the service can reach the Gemini API. Optional overrides: `GEMINI_MODEL` (default `gemini-1.5-flash-latest`) and `GEMINI_ENDPOINT` (default Google v1beta endpoint).
+- Example request:
+
+```bash
+curl -X POST http://localhost:4100/api/v1/summarize \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@/path/to/document.pdf"
+```
+
+The response is a JSON payload of the form `{"summary":"<gemini-generated-summary>"}`.
 
 ## Database Configuration
 
