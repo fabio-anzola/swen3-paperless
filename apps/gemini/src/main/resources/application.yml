@@ -1,0 +1,11 @@
+server:
+  port: 4100
+
+gemini:
+  model: ${GEMINI_MODEL:gemini-1.5-flash-latest}
+  api-key: ${GEMINI_API_KEY:}
+  endpoint: ${GEMINI_ENDPOINT:https://generativelanguage.googleapis.com/v1beta}
+
+spring:
+  application:
+    name: gemini-service
