@@ -50,6 +50,20 @@ services:
     networks:
       - app-network
 
+  gemini:
+    build:
+      context: ./apps/gemini
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "4100:4100"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:?Set GEMINI_API_KEY for Gemini service}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash-latest}
+      - GEMINI_ENDPOINT=${GEMINI_ENDPOINT:-https://generativelanguage.googleapis.com/v1beta}
+    networks:
+      - app-network
+
   db:
     image: postgres:14-alpine
     restart: always
