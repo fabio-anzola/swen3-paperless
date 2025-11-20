@@ -10,9 +10,9 @@ The system follows a microservices architecture with the following components:
 
 - **Next.js Web Frontend** (Port 3000): User interface for document management
 - **Spring Boot REST API** (Port 4000): Backend API handling business logic
-- **Gemini Summarization Service** (Port 4100): Accepts documents and returns Gemini-generated summaries
-- **Kafka Message Queue** (Port 9092): Event streaming for OCR processing
-- **OCR Worker**: Scalable workers for document text extraction
+- **Kafka Message Queue** (Port 9092): Event streaming backbone
+- **OCR Worker**: Scalable workers for document text extraction; consumes the `ocr` topic and publishes OCR text to `genai-queue`
+- **GenAI Worker**: Scalable workers that summarize OCR text with Gemini; consume `genai-queue` and publish enriched payloads to `result`
 - **PostgreSQL Database** (Port 5455): Data persistence
 - **pgAdmin** (Port 5050): Database administration interface
 - **File Storage**: Document and file storage system
@@ -26,12 +26,17 @@ The system follows a microservices architecture with the following components:
 
 ### Build and Start the Application
 
-```bash
-# Build and start all services (database, app, pgAdmin)
-docker compose up --build -d
+- Create a `.env.secrets` file in the projects root directory to define secret
+  environment keys.
 
-# Or run in foreground to see logs
-docker compose up --build --scale worker=3
+- Run one of the below commands:
+
+```bash
+# Build and start all services (database, API, workers, UI)
+docker compose --env-file .env.secrets up --build
+
+# Scale stateless workers (example: 1 OCR worker, 3 GenAI workers)
+docker compose --env-file .env.secrets up --build --scale ocr-worker=1 --scale genai-worker=3
 ```
 
 ### Access the Services
@@ -41,20 +46,17 @@ docker compose up --build --scale worker=3
   - Email: `admin@admin.com`
   - Password: `admin`
 - **PostgreSQL Database**: localhost:5455 (from host machine)
-- **Gemini Summarization Service**: http://localhost:4100/api/v1/summarize
 
-### Gemini Service
+### Worker / Kafka Flow
 
-- Set the `GEMINI_API_KEY` environment variable before starting `docker compose` so the service can reach the Gemini API. Optional overrides: `GEMINI_MODEL` (default `gemini-1.5-flash-latest`) and `GEMINI_ENDPOINT` (default Google v1beta endpoint).
-- Example request:
+1. REST API uploads user files to MinIO and emits `{ "s3Key": "<key>" }` on topic `ocr`.
+2. OCR workers download the file, extract text, and publish `{ "processedMessage": "<ocr-text>" }` to `genai-queue`.
+3. GenAI workers consume `genai-queue`, call the Gemini API to summarize, and publish `{ "processedMessage": "<ocr-text>", "summary": "<genai-summary>" }` to the `result` topic.
 
-```bash
-curl -X POST http://localhost:4100/api/v1/summarize \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@/path/to/document.pdf"
-```
+### GenAI Worker
 
-The response is a JSON payload of the form `{"summary":"<gemini-generated-summary>"}`.
+- Headless Kafka worker (no HTTP API). Set `GEMINI_API_KEY` before starting `docker compose` so it can call the Gemini API. Optional overrides: `GEMINI_MODEL` (default `gemini-1.5-flash-latest`) and `GEMINI_ENDPOINT` (default Google v1beta endpoint).
+- Scale horizontally with `--scale genai-worker=<n>`; Kafka will spread `genai-queue` partitions across the replicas.
 
 ## Database Configuration
 
@@ -63,7 +65,7 @@ The application uses PostgreSQL with the following configuration:
 - **Database Name**: `paperlessdb`
 - **Username**: `paperless_user`
 - **Password**: `paperless_pw`
-- **Port**: 5455 (host) → 5432 (container)
+- **Port**: 5455 (host) -> 5432 (container)
 
 ## Testing and Code Coverage
 
@@ -87,11 +89,11 @@ mvnw clean test
 mvnw jacoco:report
 ```
 
-#### Worker Module
+#### OCR Worker Module
 
 ```bash
-# Navigate to the worker directory
-cd apps/worker
+# Navigate to the OCR worker directory
+cd apps/ocr-worker
 
 # Run tests
 mvn test
@@ -103,25 +105,26 @@ mvn clean test
 mvn jacoco:report
 ```
 
+#### GenAI Worker Module
+
+```bash
+# Navigate to the GenAI worker directory
+cd apps/genai-worker
+
+# Run tests
+mvn test
+```
+
 ### Viewing Code Coverage Reports
 
 After running tests, JaCoCo generates HTML reports that you can view in your browser:
 
 - **REST API Coverage Report**: `apps/rest/target/site/jacoco/index.html`
-- **Worker Coverage Report**: `apps/worker/target/site/jacoco/index.html`
-
-Open these files in your web browser to see detailed coverage metrics including:
-
-- Line coverage
-- Branch coverage
-- Method coverage
-- Class coverage
+- **OCR Worker Coverage Report**: `apps/ocr-worker/target/site/jacoco/index.html`
 
 ### Code Coverage Thresholds
 
-The project is configured with a minimum code coverage threshold of 50% at the package level. Builds will fail if coverage falls below this threshold.
-
-To customize coverage thresholds, edit the JaCoCo plugin configuration in the respective `pom.xml` files.
+REST API and OCR worker builds are configured with a minimum code coverage threshold of 50% at the package level. Builds will fail if coverage falls below this threshold. To customize coverage thresholds, edit the JaCoCo plugin configuration in the respective `pom.xml` files.
 
 ### Running Coverage Check
 
@@ -133,16 +136,10 @@ cd apps/rest
 mvnw clean test
 mvnw jacoco:check
 
-# Or run both in one command
-mvnw clean test jacoco:check
-
-# Worker - Run tests first, then check coverage
-cd apps/worker
+# OCR worker - Run tests first, then check coverage
+cd apps/ocr-worker
 mvn clean test
 mvn jacoco:check
-
-# Or run both in one command
-mvn clean test jacoco:check
 ```
 
 **Note**: The `jacoco:check` goal requires the coverage data file (`jacoco.exec`) which is generated during test execution. If you run `jacoco:check` without running tests first, it will skip the check.

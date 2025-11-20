@@ -1,11 +1,19 @@
-server:
-  port: 4100
+spring:
+  application:
+    name: genai-worker
+  main:
+    web-application-type: none
 
 gemini:
   model: ${GEMINI_MODEL:gemini-1.5-flash-latest}
   api-key: ${GEMINI_API_KEY:}
   endpoint: ${GEMINI_ENDPOINT:https://generativelanguage.googleapis.com/v1beta}
 
-spring:
-  application:
-    name: gemini-service
+worker:
+  bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
+  group-id: ${GROUP_ID:genai-workers}
+  input-topic: ${INPUT_TOPIC:genai-queue}
+  output-topic: ${OUTPUT_TOPIC:result}
+  auto-offset-reset: ${AUTO_OFFSET_RESET:earliest}
+  enable-auto-commit: ${ENABLE_AUTO_COMMIT:false}
+  poll-ms: ${POLL_MS:1000}

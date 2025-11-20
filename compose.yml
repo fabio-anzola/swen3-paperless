@@ -50,17 +50,43 @@ services:
     networks:
       - app-network
 
-  gemini:
-    build:
-      context: ./apps/gemini
-      dockerfile: Dockerfile
+  ocr-worker:
+    build: ./apps/ocr-worker
     restart: always
-    ports:
-      - "4100:4100"
+    depends_on:
+      - kafka
+      - minio
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY:?Set GEMINI_API_KEY for Gemini service}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash-latest}
-      - GEMINI_ENDPOINT=${GEMINI_ENDPOINT:-https://generativelanguage.googleapis.com/v1beta}
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: ocr-workers
+      TOPIC: ocr
+      OUTPUT_TOPIC: genai-queue
+      AUTO_OFFSET_RESET: earliest
+      ENABLE_AUTO_COMMIT: "false"
+      POLL_MS: "1000"
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: uploaded-documents
+    networks:
+      - app-network
+
+  genai-worker:
+    build: ./apps/genai-worker
+    restart: always
+    depends_on:
+      - kafka
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: genai-workers
+      INPUT_TOPIC: genai-queue
+      OUTPUT_TOPIC: result
+      AUTO_OFFSET_RESET: earliest
+      ENABLE_AUTO_COMMIT: "false"
+      POLL_MS: "1000"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?Set GEMINI_API_KEY for GenAI worker}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash-latest}
+      GEMINI_ENDPOINT: ${GEMINI_ENDPOINT:-https://generativelanguage.googleapis.com/v1beta}
     networks:
       - app-network
 
@@ -155,26 +181,6 @@ services:
       retries: 3
       start_period: 10s
 
-  worker:
-    build: ./apps/worker
-    restart: always
-    depends_on:
-      - kafka
-      - minio
-    environment:
-      BOOTSTRAP_SERVERS: kafka:9092
-      GROUP_ID: demo-consumer-group
-      TOPIC: ocr
-      OUTPUT_TOPIC: result
-      AUTO_OFFSET_RESET: earliest
-      ENABLE_AUTO_COMMIT: "false"
-      POLL_MS: "1000"
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET_NAME: uploaded-documents
-    networks:
-      - app-network
 
 volumes:
   postgres_data:
