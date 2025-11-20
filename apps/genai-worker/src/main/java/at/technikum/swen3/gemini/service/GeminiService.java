@@ -3,6 +3,8 @@ package at.technikum.swen3.gemini.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -10,6 +12,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import at.technikum.swen3.gemini.config.GeminiProperties;
+import at.technikum.swen3.gemini.dto.GeminiCandidate;
 import at.technikum.swen3.gemini.dto.GeminiContent;
 import at.technikum.swen3.gemini.dto.GeminiGenerationConfig;
 import at.technikum.swen3.gemini.dto.GeminiPart;
@@ -21,6 +24,7 @@ import at.technikum.swen3.gemini.dto.SummaryResponse;
 public class GeminiService {
 
     private static final String SUMMARY_PROMPT = "Provide a concise summary of the following text extracted from a document.";
+    private static final Logger log = LoggerFactory.getLogger(GeminiService.class);
 
     private final GeminiProperties properties;
     private final RestClient restClient;
@@ -71,16 +75,37 @@ public class GeminiService {
     }
 
     private String extractSummary(GeminiResponse response) {
-        return Optional.ofNullable(response)
-                .map(GeminiResponse::candidates)
-                .filter(candidates -> !candidates.isEmpty())
-                .map(candidates -> candidates.getFirst().content())
+        if (response == null) {
+            throw new IllegalStateException("Gemini response was null");
+        }
+
+        if (response.promptFeedback() != null && StringUtils.hasText(response.promptFeedback().blockReason())) {
+            throw new IllegalStateException("Gemini blocked the prompt: " + response.promptFeedback().blockReason());
+        }
+
+        List<GeminiCandidate> candidates = Optional.ofNullable(response.candidates())
+                .filter(list -> !list.isEmpty())
+                .orElseThrow(() -> new IllegalStateException("Gemini returned no summary text"));
+
+        GeminiCandidate firstCandidate = candidates.getFirst();
+        if (StringUtils.hasText(firstCandidate.finishReason())
+                && !"STOP".equalsIgnoreCase(firstCandidate.finishReason())) {
+            throw new IllegalStateException("Gemini did not finish: " + firstCandidate.finishReason());
+        }
+
+        Optional<String> summary = Optional.ofNullable(firstCandidate.content())
                 .map(GeminiContent::parts)
                 .filter(parts -> !parts.isEmpty())
                 .flatMap(parts -> parts.stream()
                         .map(GeminiPart::text)
                         .filter(StringUtils::hasText)
-                        .findFirst())
-                .orElseThrow(() -> new IllegalStateException("Gemini returned no summary"));
+                        .findFirst());
+
+        if (summary.isEmpty()) {
+            log.warn("Gemini response had no text: {}", response);
+            throw new IllegalStateException("Gemini returned no summary text");
+        }
+
+        return summary.get();
     }
 }
