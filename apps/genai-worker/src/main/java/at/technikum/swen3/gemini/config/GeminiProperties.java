@@ -24,6 +24,16 @@ public class GeminiProperties {
      */
     private String endpoint = "https://generativelanguage.googleapis.com/v1beta";
 
+    /**
+     * Maximum number of tokens Gemini can generate for a summary.
+     */
+    private Integer maxOutputTokens;
+
+    /**
+     * Temperature for response randomness.
+     */
+    private Double temperature = 0.4;
+
     public String getApiKey() {
         return apiKey;
     }
@@ -46,5 +56,21 @@ public class GeminiProperties {
 
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public Integer getMaxOutputTokens() {
+        return maxOutputTokens;
+    }
+
+    public void setMaxOutputTokens(Integer maxOutputTokens) {
+        this.maxOutputTokens = maxOutputTokens;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
     }
 }

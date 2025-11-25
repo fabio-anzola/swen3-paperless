@@ -60,7 +60,10 @@ public class GeminiService {
         GeminiPart body = new GeminiPart(text, null);
 
         GeminiContent content = new GeminiContent(List.of(instruction, body));
-        GeminiGenerationConfig config = new GeminiGenerationConfig(256, 0.4);
+        GeminiGenerationConfig config = new GeminiGenerationConfig(
+                properties.getMaxOutputTokens(),
+                properties.getTemperature()
+        );
 
         return new GeminiRequest(List.of(content), config);
     }
@@ -88,9 +91,15 @@ public class GeminiService {
                 .orElseThrow(() -> new IllegalStateException("Gemini returned no summary text"));
 
         GeminiCandidate firstCandidate = candidates.getFirst();
-        if (StringUtils.hasText(firstCandidate.finishReason())
-                && !"STOP".equalsIgnoreCase(firstCandidate.finishReason())) {
-            throw new IllegalStateException("Gemini did not finish: " + firstCandidate.finishReason());
+        String finishReason = firstCandidate.finishReason();
+        boolean truncated = false;
+        if (StringUtils.hasText(finishReason) && !"STOP".equalsIgnoreCase(finishReason)) {
+            if ("MAX_TOKENS".equalsIgnoreCase(finishReason)) {
+                truncated = true;
+                log.warn("Gemini truncated output because maxOutputTokens={} was reached", properties.getMaxOutputTokens());
+            } else {
+                throw new IllegalStateException("Gemini did not finish: " + firstCandidate.finishReason());
+            }
         }
 
         Optional<String> summary = Optional.ofNullable(firstCandidate.content())
@@ -102,8 +111,16 @@ public class GeminiService {
                         .findFirst());
 
         if (summary.isEmpty()) {
+            if (truncated) {
+                log.warn("Gemini truncated and returned no text; using fallback summary");
+                return "Summary truncated; Gemini returned no text (MAX_TOKENS)";
+            }
             log.warn("Gemini response had no text: {}", response);
             throw new IllegalStateException("Gemini returned no summary text");
+        }
+
+        if (truncated) {
+            log.info("Using truncated Gemini summary");
         }
 
         return summary.get();

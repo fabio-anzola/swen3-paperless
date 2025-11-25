@@ -8,6 +8,7 @@ gemini:
   model: ${GEMINI_MODEL:gemini-1.5-flash-001}
   api-key: ${GEMINI_API_KEY:}
   endpoint: ${GEMINI_ENDPOINT:https://generativelanguage.googleapis.com/v1beta}
+  temperature: ${GEMINI_TEMPERATURE:0.4}
 
 worker:
   bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
