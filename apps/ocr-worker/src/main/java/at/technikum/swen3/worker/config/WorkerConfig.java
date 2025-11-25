@@ -22,7 +22,7 @@ public class WorkerConfig {
         this.bootstrapServers = getEnv("BOOTSTRAP_SERVERS", "localhost:9092");
         this.groupId = getEnv("GROUP_ID", "demo-consumer-group");
         this.inputTopic = getEnv("TOPIC", "ocr");
-        this.outputTopic = getEnv("OUTPUT_TOPIC", "result");
+        this.outputTopic = getEnv("OUTPUT_TOPIC", "genai-queue");
         this.autoOffsetReset = getEnv("AUTO_OFFSET_RESET", "earliest");
         this.enableAutoCommit = getEnv("ENABLE_AUTO_COMMIT", "false");
         this.pollMs = Long.parseLong(getEnv("POLL_MS", "1000"));
