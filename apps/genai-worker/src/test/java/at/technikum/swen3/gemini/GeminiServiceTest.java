@@ -1,8 +1,12 @@
 package at.technikum.swen3.gemini;
 
-import at.technikum.swen3.gemini.config.GeminiProperties;
-import at.technikum.swen3.gemini.dto.*;
-import at.technikum.swen3.gemini.service.GeminiService;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,12 +17,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import at.technikum.swen3.gemini.config.GeminiProperties;
+import at.technikum.swen3.gemini.dto.*;
+import at.technikum.swen3.gemini.service.GeminiService;
 
 @ExtendWith(MockitoExtension.class)
 class GeminiServiceTest {
@@ -45,11 +46,9 @@ class GeminiServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Setup RestClient builder chain with lenient stubbing
         lenient().when(restClientBuilder.baseUrl(anyString())).thenReturn(restClientBuilder);
         lenient().when(restClientBuilder.build()).thenReturn(restClient);
 
-        // Default properties with lenient stubbing
         lenient().when(geminiProperties.getEndpoint()).thenReturn("https://test-endpoint.com");
         lenient().when(geminiProperties.getApiKey()).thenReturn("test-api-key");
         lenient().when(geminiProperties.getModel()).thenReturn("gemini-1.5-flash-latest");
@@ -66,7 +65,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldReturnSummary_whenValidTextProvided() {
-        // Arrange
         String inputText = "This is a long document that needs to be summarized.";
         String expectedSummary = "A concise summary of the document.";
 
@@ -77,10 +75,8 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result).isNotNull();
         assertThat(result.summary()).isEqualTo(expectedSummary);
 
@@ -96,7 +92,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldBuildCorrectRequest() {
-        // Arrange
         String inputText = "Test document content.";
         String expectedSummary = "Summary";
 
@@ -109,10 +104,8 @@ class GeminiServiceTest {
 
         ArgumentCaptor<GeminiRequest> requestCaptor = ArgumentCaptor.forClass(GeminiRequest.class);
 
-        // Act
         geminiService.summarize(inputText);
 
-        // Assert
         verify(requestBodySpec).body(requestCaptor.capture());
 
         GeminiRequest capturedRequest = requestCaptor.getValue();
@@ -131,7 +124,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenTextIsNull() {
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(null))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Text to summarize must not be blank");
@@ -141,7 +133,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenTextIsEmpty() {
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(""))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Text to summarize must not be blank");
@@ -151,7 +142,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenTextIsBlank() {
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize("   "))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Text to summarize must not be blank");
@@ -161,10 +151,8 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenApiKeyIsNull() {
-        // Arrange
         when(geminiProperties.getApiKey()).thenReturn(null);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize("Test text"))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini API key is not configured");
@@ -174,10 +162,8 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenApiKeyIsEmpty() {
-        // Arrange
         when(geminiProperties.getApiKey()).thenReturn("");
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize("Test text"))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini API key is not configured");
@@ -187,10 +173,8 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenApiKeyIsBlank() {
-        // Arrange
         when(geminiProperties.getApiKey()).thenReturn("   ");
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize("Test text"))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini API key is not configured");
@@ -200,13 +184,11 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenRestClientFails() {
-        // Arrange
         String inputText = "Test text";
         setupMockRestClientChain(null);
         when(responseSpec.body(GeminiResponse.class))
             .thenThrow(new RestClientException("Network error"));
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini request failed")
@@ -215,11 +197,9 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenResponseIsNull() {
-        // Arrange
         String inputText = "Test text";
         setupMockRestClientChain(null);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini response was null");
@@ -227,14 +207,12 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPromptIsBlocked() {
-        // Arrange
         String inputText = "Inappropriate content";
         PromptFeedback feedback = new PromptFeedback("SAFETY");
         GeminiResponse geminiResponse = new GeminiResponse(null, feedback);
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini blocked the prompt: SAFETY");
@@ -242,13 +220,11 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenCandidatesListIsNull() {
-        // Arrange
         String inputText = "Test text";
         GeminiResponse geminiResponse = new GeminiResponse(null, null);
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -256,13 +232,11 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenCandidatesListIsEmpty() {
-        // Arrange
         String inputText = "Test text";
         GeminiResponse geminiResponse = new GeminiResponse(Collections.emptyList(), null);
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -270,7 +244,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenFinishReasonIsNotStop() {
-        // Arrange
         String inputText = "Test text";
         GeminiPart summaryPart = new GeminiPart("Partial summary", null);
         GeminiContent responseContent = new GeminiContent(List.of(summaryPart));
@@ -279,7 +252,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini did not finish: MAX_TOKENS");
@@ -287,7 +259,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldSucceed_whenFinishReasonIsStopInLowerCase() {
-        // Arrange
         String inputText = "Test text";
         String expectedSummary = "Summary";
         GeminiPart summaryPart = new GeminiPart(expectedSummary, null);
@@ -297,16 +268,13 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result.summary()).isEqualTo(expectedSummary);
     }
 
     @Test
     void summarize_shouldSucceed_whenFinishReasonIsNull() {
-        // Arrange
         String inputText = "Test text";
         String expectedSummary = "Summary";
         GeminiPart summaryPart = new GeminiPart(expectedSummary, null);
@@ -316,16 +284,13 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result.summary()).isEqualTo(expectedSummary);
     }
 
     @Test
     void summarize_shouldSucceed_whenFinishReasonIsEmpty() {
-        // Arrange
         String inputText = "Test text";
         String expectedSummary = "Summary";
         GeminiPart summaryPart = new GeminiPart(expectedSummary, null);
@@ -335,23 +300,19 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result.summary()).isEqualTo(expectedSummary);
     }
 
     @Test
     void summarize_shouldThrowException_whenContentIsNull() {
-        // Arrange
         String inputText = "Test text";
         GeminiCandidate candidate = new GeminiCandidate(null, "STOP");
         GeminiResponse geminiResponse = new GeminiResponse(List.of(candidate), null);
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -359,7 +320,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPartsListIsNull() {
-        // Arrange
         String inputText = "Test text";
         GeminiContent responseContent = new GeminiContent(null);
         GeminiCandidate candidate = new GeminiCandidate(responseContent, "STOP");
@@ -367,7 +327,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -375,7 +334,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPartsListIsEmpty() {
-        // Arrange
         String inputText = "Test text";
         GeminiContent responseContent = new GeminiContent(Collections.emptyList());
         GeminiCandidate candidate = new GeminiCandidate(responseContent, "STOP");
@@ -383,7 +341,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -391,7 +348,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPartTextIsNull() {
-        // Arrange
         String inputText = "Test text";
         GeminiPart summaryPart = new GeminiPart(null, null);
         GeminiContent responseContent = new GeminiContent(List.of(summaryPart));
@@ -400,7 +356,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -408,7 +363,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPartTextIsEmpty() {
-        // Arrange
         String inputText = "Test text";
         GeminiPart summaryPart = new GeminiPart("", null);
         GeminiContent responseContent = new GeminiContent(List.of(summaryPart));
@@ -417,7 +371,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -425,7 +378,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldThrowException_whenPartTextIsBlank() {
-        // Arrange
         String inputText = "Test text";
         GeminiPart summaryPart = new GeminiPart("   ", null);
         GeminiContent responseContent = new GeminiContent(List.of(summaryPart));
@@ -434,7 +386,6 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act & Assert
         assertThatThrownBy(() -> geminiService.summarize(inputText))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("Gemini returned no summary text");
@@ -442,7 +393,6 @@ class GeminiServiceTest {
 
     @Test
     void summarize_shouldReturnFirstValidText_whenMultiplePartsExist() {
-        // Arrange
         String inputText = "Test text";
         String expectedSummary = "First valid summary";
 
@@ -456,16 +406,13 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result.summary()).isEqualTo(expectedSummary);
     }
 
     @Test
     void summarize_shouldUseFirstCandidate_whenMultipleCandidatesExist() {
-        // Arrange
         String inputText = "Test text";
         String expectedSummary = "Summary from first candidate";
 
@@ -481,14 +428,11 @@ class GeminiServiceTest {
 
         setupMockRestClientChain(geminiResponse);
 
-        // Act
         SummaryResponse result = geminiService.summarize(inputText);
 
-        // Assert
         assertThat(result.summary()).isEqualTo(expectedSummary);
     }
 
-    // Helper method to setup the mock RestClient chain
     private void setupMockRestClientChain(GeminiResponse response) {
         when(restClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString(), any(), any())).thenReturn(requestBodySpec);
