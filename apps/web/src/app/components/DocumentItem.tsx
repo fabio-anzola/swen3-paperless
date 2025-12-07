@@ -1,10 +1,7 @@
+import { DocumentDto } from "./useDocuments";
+
 interface DocumentItemProps {
-  document: {
-    id: number;
-    name: string;
-    s3Key?: string | null;
-    ownerId: number;
-  };
+  document: DocumentDto;
   isDownloading: boolean;
   onDownload: (id: number) => void;
 }
@@ -22,7 +19,7 @@ export default function DocumentItem({
         disabled={isDownloading}
         onClick={() => onDownload(document.id)}
       >
-        {isDownloading ? "Downloading…" : "Download"}
+        {isDownloading ? "Downloading..." : "Download"}
       </button>
     </li>
   );

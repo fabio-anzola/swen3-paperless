@@ -1,9 +1,14 @@
 package at.technikum.swen3.service;
 
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,11 +29,14 @@ import at.technikum.swen3.service.dtos.document.DocumentDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.mapper.DocumentMapper;
 import at.technikum.swen3.service.model.DocumentDownload;
+import at.technikum.swen3.service.model.DocumentSearchDocument;
 import io.minio.StatObjectResponse;
 
 @Service
 @Transactional
 public class DocumentService implements IDocumentService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DocumentService.class);
 
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
@@ -36,23 +44,43 @@ public class DocumentService implements IDocumentService {
     private final KafkaProducerService kafkaProducerService;
     private final ObjectMapper objectMapper;
     private final S3Service s3Service;
+    private final DocumentSearchService documentSearchService;
     @Value("${kafka.topic.ocr}")
     private String ocrTopic;
 
 
-    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper, KafkaProducerService kafkaProducerService, ObjectMapper objectMapper, S3Service s3Service) {
+    public DocumentService(DocumentRepository documentRepository, UserRepository userRepository, DocumentMapper documentMapper, KafkaProducerService kafkaProducerService, ObjectMapper objectMapper, S3Service s3Service, DocumentSearchService documentSearchService) {
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.documentMapper = documentMapper;
         this.kafkaProducerService = kafkaProducerService;
         this.objectMapper = objectMapper;
         this.s3Service = s3Service;
+        this.documentSearchService = documentSearchService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<DocumentDto> listMine(Long userId, Pageable pageable) {
         return documentRepository.findAllByOwnerId(userId, pageable).map(documentMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DocumentDto> searchMine(Long userId, String query, Pageable pageable) {
+        if (query == null || query.isBlank()) {
+            return listMine(userId, pageable);
+        }
+        DocumentSearchService.SearchResult searchResult = documentSearchService.search(userId, query, pageable);
+        var results = searchResult.ids().stream()
+                .map(documentRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(doc -> doc.getOwner() != null && doc.getOwner().getId().equals(userId))
+                .map(documentMapper::toDto)
+                .toList();
+
+        return new PageImpl<>(results, pageable, searchResult.totalHits());
     }
 
     @Override
@@ -93,6 +121,8 @@ public class DocumentService implements IDocumentService {
 
         d = documentRepository.save(d);
 
+        documentSearchService.index(toSearchDocument(d, null, null));
+
         try {
             kafkaProducerService.sendMessage(ocrTopic, objectMapper.writeValueAsString(new OcrTopicMessageDto(d.getS3Key())));
         } catch (JsonProcessingException e) {
@@ -107,6 +137,7 @@ public class DocumentService implements IDocumentService {
         Document d = documentRepository.findById(id).orElseThrow(this::notFound);
         enforceOwner(userId, d);
         if (meta != null) documentMapper.updateEntityFromUpload(meta, d);
+        documentSearchService.index(toSearchDocument(d, null, null));
         return documentMapper.toDto(d);
     }
 
@@ -116,6 +147,7 @@ public class DocumentService implements IDocumentService {
         enforceOwner(userId, d);
 
         s3Service.deleteFile(d.getS3Key());
+        documentSearchService.delete(d.getId());
 
         documentRepository.delete(d);
     }
@@ -132,5 +164,16 @@ public class DocumentService implements IDocumentService {
 
     private ResponseStatusException badRequest(String m) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, m);
+    }
+
+    private DocumentSearchDocument toSearchDocument(Document document, String summary, String content) {
+        return new DocumentSearchDocument(
+                document.getId(),
+                document.getOwner() != null ? document.getOwner().getId() : null,
+                document.getName(),
+                document.getS3Key(),
+                summary,
+                content
+        );
     }
 }

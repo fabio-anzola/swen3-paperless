@@ -19,4 +19,6 @@ public interface IDocumentService {
     DocumentDto updateMeta(Long userId, Long id, DocumentUploadDto meta);
 
     void delete(Long userId, Long id);
+
+    Page<DocumentDto> searchMine(Long userId, String query, Pageable pageable);
 }

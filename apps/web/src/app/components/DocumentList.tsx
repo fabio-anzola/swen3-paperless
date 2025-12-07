@@ -1,11 +1,5 @@
+import { DocumentDto } from "./useDocuments";
 import DocumentItem from "./DocumentItem";
-
-type DocumentDto = {
-  id: number;
-  name: string;
-  s3Key?: string | null;
-  ownerId: number;
-};
 
 interface DocumentListProps {
   documents: DocumentDto[];

@@ -54,6 +54,23 @@ public class DocumentEndpoint {
         return documentService.listMine(userId, pageable);
     }
 
+    @GetMapping("/search")
+    public Page<DocumentDto> searchMine(Authentication authentication,
+                                        @RequestParam(value = "query", required = false) String query,
+                                        @RequestParam(value = "q", required = false) String q,
+                                        Pageable pageable) {
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
+        String effectiveQuery = (query != null && !query.isBlank()) ? query : q;
+        LOG.info("Searching documents for userId={}, query={}", userId, effectiveQuery);
+        return documentService.searchMine(userId, effectiveQuery, pageable);
+    }
+
     @GetMapping("/{id}")
     public DocumentDto getMeta(Authentication authentication, @PathVariable Long id) {
         Long userId = userService.findByUsername(authentication.getName()).getId();

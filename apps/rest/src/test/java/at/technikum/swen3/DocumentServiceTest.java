@@ -28,6 +28,7 @@ import at.technikum.swen3.entity.User;
 import at.technikum.swen3.kafka.KafkaProducerService;
 import at.technikum.swen3.repository.DocumentRepository;
 import at.technikum.swen3.repository.UserRepository;
+import at.technikum.swen3.service.DocumentSearchService;
 import at.technikum.swen3.service.DocumentService;
 import at.technikum.swen3.service.S3Service;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
@@ -43,6 +44,7 @@ class DocumentServiceTest {
     private KafkaProducerService kafkaProducerService;
     private ObjectMapper objectMapper;
     private S3Service s3Service;
+    private DocumentSearchService documentSearchService;
     private DocumentService documentService;
 
     @BeforeEach
@@ -53,7 +55,8 @@ class DocumentServiceTest {
         kafkaProducerService = mock(KafkaProducerService.class);
         objectMapper = mock(ObjectMapper.class);
         s3Service = mock(S3Service.class);
-        documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper, s3Service);
+        documentSearchService = mock(DocumentSearchService.class);
+        documentService = new DocumentService(documentRepository, userRepository, documentMapper, kafkaProducerService, objectMapper, s3Service, documentSearchService);
 
         Field topicField = DocumentService.class.getDeclaredField("ocrTopic");
         topicField.setAccessible(true);
