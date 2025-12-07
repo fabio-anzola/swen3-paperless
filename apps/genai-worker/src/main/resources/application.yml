@@ -3,6 +3,10 @@ spring:
     name: genai-worker
   main:
     web-application-type: none
+  elasticsearch:
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://elasticsearch:9200}
+    username: ${SPRING_ELASTICSEARCH_USERNAME:elastic}
+    password: ${SPRING_ELASTICSEARCH_PASSWORD:MyStrongPassword}
 
 gemini:
   model: ${GEMINI_MODEL:gemini-1.5-flash-001}

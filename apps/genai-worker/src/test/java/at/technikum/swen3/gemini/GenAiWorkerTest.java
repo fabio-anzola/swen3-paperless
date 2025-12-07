@@ -41,6 +41,7 @@ import at.technikum.swen3.gemini.config.WorkerProperties;
 import at.technikum.swen3.gemini.dto.GenAiResultMessage;
 import at.technikum.swen3.gemini.dto.OcrResultMessage;
 import at.technikum.swen3.gemini.dto.SummaryResponse;
+import at.technikum.swen3.gemini.elastic.repository.PDFDocumentRepository;
 import at.technikum.swen3.gemini.service.GeminiService;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,6 +57,9 @@ class GenAiWorkerTest {
     private ObjectMapper objectMapper;
 
     @Mock
+    private PDFDocumentRepository pdfDocumentRepository;
+
+    @Mock
     private KafkaConsumer<String, String> kafkaConsumer;
 
     @Mock
@@ -65,7 +69,7 @@ class GenAiWorkerTest {
 
     @BeforeEach
     void setUp() {
-        genAiWorker = new GenAiWorker(workerProperties, geminiService, objectMapper);
+        genAiWorker = new GenAiWorker(workerProperties, geminiService, objectMapper, pdfDocumentRepository);
     }
 
     @Test
@@ -76,13 +80,12 @@ class GenAiWorkerTest {
         when(workerProperties.getPollMs()).thenReturn(1000L);
 
         ConsumerRecord<String, String> record = new ConsumerRecord<>("input-topic", 0, 0, "key",
-            "{\"processedMessage\":\"Test content\"}");
+            "{\"processedMessage\":\"Test content\",\"s3Key\":\"file-key\",\"fileName\":\"file.pdf\"}");
         ConsumerRecords<String, String> records = new ConsumerRecords<>(
             Map.of(new TopicPartition("input-topic", 0), Collections.singletonList(record)));
 
-        OcrResultMessage ocrMessage = new OcrResultMessage("Test content");
+        OcrResultMessage ocrMessage = new OcrResultMessage("Test content", "file-key", "file.pdf");
         SummaryResponse summaryResponse = new SummaryResponse("Test summary");
-        GenAiResultMessage genAiMessage = new GenAiResultMessage("Test content", "Test summary");
 
         try (MockedStatic<KafkaFactory> kafkaFactoryMock = mockStatic(KafkaFactory.class)) {
             kafkaFactoryMock.when(() -> KafkaFactory.createConsumer(workerProperties)).thenReturn(kafkaConsumer);
@@ -92,10 +95,10 @@ class GenAiWorkerTest {
                 .thenReturn(records)
                 .thenThrow(new WakeupException());
 
-            when(objectMapper.readValue("{\"processedMessage\":\"Test content\"}", OcrResultMessage.class))
+            when(objectMapper.readValue("{\"processedMessage\":\"Test content\",\"s3Key\":\"file-key\",\"fileName\":\"file.pdf\"}", OcrResultMessage.class))
                 .thenReturn(ocrMessage);
             when(geminiService.summarize("Test content")).thenReturn(summaryResponse);
-            when(objectMapper.writeValueAsString(genAiMessage)).thenReturn("{\"processedMessage\":\"Test content\",\"summary\":\"Test summary\"}");
+            when(objectMapper.writeValueAsString(any(GenAiResultMessage.class))).thenReturn("{\"processedMessage\":\"Test content\",\"summary\":\"Test summary\",\"s3Key\":\"file-key\",\"elasticId\":\"id\",\"fileName\":\"file.pdf\"}");
 
             genAiWorker.run();
 
@@ -187,9 +190,9 @@ class GenAiWorkerTest {
         when(workerProperties.getPollMs()).thenReturn(1000L);
 
         ConsumerRecord<String, String> record1 = new ConsumerRecord<>("input-topic", 0, 0, "key1",
-            "{\"processedMessage\":\"Content 1\"}");
+            "{\"processedMessage\":\"Content 1\",\"s3Key\":\"s3-1\",\"fileName\":\"file1.pdf\"}");
         ConsumerRecord<String, String> record2 = new ConsumerRecord<>("input-topic", 0, 1, "key2",
-            "{\"processedMessage\":\"Content 2\"}");
+            "{\"processedMessage\":\"Content 2\",\"s3Key\":\"s3-2\",\"fileName\":\"file2.pdf\"}");
 
         ConsumerRecords<String, String> records = new ConsumerRecords<>(
             Map.of(new TopicPartition("input-topic", 0),
@@ -203,10 +206,10 @@ class GenAiWorkerTest {
                 .thenReturn(records)
                 .thenThrow(new WakeupException());
 
-            when(objectMapper.readValue(eq("{\"processedMessage\":\"Content 1\"}"), eq(OcrResultMessage.class)))
-                .thenReturn(new OcrResultMessage("Content 1"));
-            when(objectMapper.readValue(eq("{\"processedMessage\":\"Content 2\"}"), eq(OcrResultMessage.class)))
-                .thenReturn(new OcrResultMessage("Content 2"));
+            when(objectMapper.readValue(eq("{\"processedMessage\":\"Content 1\",\"s3Key\":\"s3-1\",\"fileName\":\"file1.pdf\"}"), eq(OcrResultMessage.class)))
+                .thenReturn(new OcrResultMessage("Content 1", "s3-1", "file1.pdf"));
+            when(objectMapper.readValue(eq("{\"processedMessage\":\"Content 2\",\"s3Key\":\"s3-2\",\"fileName\":\"file2.pdf\"}"), eq(OcrResultMessage.class)))
+                .thenReturn(new OcrResultMessage("Content 2", "s3-2", "file2.pdf"));
 
             when(geminiService.summarize("Content 1")).thenReturn(new SummaryResponse("Summary 1"));
             when(geminiService.summarize("Content 2")).thenReturn(new SummaryResponse("Summary 2"));
@@ -229,7 +232,7 @@ class GenAiWorkerTest {
         when(workerProperties.getPollMs()).thenReturn(1000L);
 
         ConsumerRecord<String, String> validRecord = new ConsumerRecord<>("input-topic", 0, 0, "key1",
-            "{\"processedMessage\":\"Valid content\"}");
+            "{\"processedMessage\":\"Valid content\",\"s3Key\":\"s3-valid\",\"fileName\":\"valid.pdf\"}");
         ConsumerRecord<String, String> invalidRecord = new ConsumerRecord<>("input-topic", 0, 1, "key2",
             "invalid-json");
 
@@ -245,8 +248,8 @@ class GenAiWorkerTest {
                 .thenReturn(records)
                 .thenThrow(new WakeupException());
 
-            when(objectMapper.readValue(eq("{\"processedMessage\":\"Valid content\"}"), eq(OcrResultMessage.class)))
-                .thenReturn(new OcrResultMessage("Valid content"));
+            when(objectMapper.readValue(eq("{\"processedMessage\":\"Valid content\",\"s3Key\":\"s3-valid\",\"fileName\":\"valid.pdf\"}"), eq(OcrResultMessage.class)))
+                .thenReturn(new OcrResultMessage("Valid content", "s3-valid", "valid.pdf"));
             when(objectMapper.readValue(eq("invalid-json"), eq(OcrResultMessage.class)))
                 .thenThrow(new JsonProcessingException("Invalid JSON") {});
 
@@ -264,20 +267,18 @@ class GenAiWorkerTest {
     @Test
     void processRecord_shouldProcessValidRecord_andSendToOutputTopic() throws Exception {
         String recordKey = "test-key";
-        String inputJson = "{\"processedMessage\":\"Test OCR content\"}";
+        String inputJson = "{\"processedMessage\":\"Test OCR content\",\"s3Key\":\"s3-test\",\"fileName\":\"test.pdf\"}";
         String expectedSummary = "Test summary";
-        String outputJson = "{\"processedMessage\":\"Test OCR content\",\"summary\":\"Test summary\"}";
+        String outputJson = "{\"processedMessage\":\"Test OCR content\",\"summary\":\"Test summary\",\"s3Key\":\"s3-test\",\"elasticId\":\"id\",\"fileName\":\"test.pdf\"}";
 
-        OcrResultMessage ocrMessage = new OcrResultMessage("Test OCR content");
+        OcrResultMessage ocrMessage = new OcrResultMessage("Test OCR content", "s3-test", "test.pdf");
         SummaryResponse summaryResponse = new SummaryResponse(expectedSummary);
-        GenAiResultMessage genAiMessage = new GenAiResultMessage("Test OCR content", expectedSummary);
-
         ConsumerRecord<String, String> record = new ConsumerRecord<>("input-topic", 0, 0, recordKey, inputJson);
 
         when(workerProperties.getOutputTopic()).thenReturn("test-output-topic");
         when(objectMapper.readValue(inputJson, OcrResultMessage.class)).thenReturn(ocrMessage);
         when(geminiService.summarize("Test OCR content")).thenReturn(summaryResponse);
-        when(objectMapper.writeValueAsString(genAiMessage)).thenReturn(outputJson);
+        when(objectMapper.writeValueAsString(any(GenAiResultMessage.class))).thenReturn(outputJson);
 
         invokeProcessRecord(record, kafkaProducer);
 
@@ -297,11 +298,9 @@ class GenAiWorkerTest {
 
     @Test
     void processRecord_shouldHandleSuccessfulCallback() throws Exception {
-        String inputJson = "{\"processedMessage\":\"Test content\"}";
-        OcrResultMessage ocrMessage = new OcrResultMessage("Test content");
+        String inputJson = "{\"processedMessage\":\"Test content\",\"s3Key\":\"s3-test\",\"fileName\":\"content.pdf\"}";
+        OcrResultMessage ocrMessage = new OcrResultMessage("Test content", "s3-test", "content.pdf");
         SummaryResponse summaryResponse = new SummaryResponse("Summary");
-        GenAiResultMessage genAiMessage = new GenAiResultMessage("Test content", "Summary");
-
         ConsumerRecord<String, String> record = new ConsumerRecord<>("input-topic", 0, 0, "key", inputJson);
         RecordMetadata metadata = mock(RecordMetadata.class);
         when(metadata.topic()).thenReturn("output-topic");
@@ -311,7 +310,7 @@ class GenAiWorkerTest {
         when(workerProperties.getOutputTopic()).thenReturn("test-output-topic");
         when(objectMapper.readValue(inputJson, OcrResultMessage.class)).thenReturn(ocrMessage);
         when(geminiService.summarize("Test content")).thenReturn(summaryResponse);
-        when(objectMapper.writeValueAsString(genAiMessage)).thenReturn("{}");
+        when(objectMapper.writeValueAsString(any(GenAiResultMessage.class))).thenReturn("{}");
 
         invokeProcessRecord(record, kafkaProducer);
 
@@ -324,18 +323,16 @@ class GenAiWorkerTest {
 
     @Test
     void processRecord_shouldHandleFailedCallback() throws Exception {
-        String inputJson = "{\"processedMessage\":\"Test content\"}";
-        OcrResultMessage ocrMessage = new OcrResultMessage("Test content");
+        String inputJson = "{\"processedMessage\":\"Test content\",\"s3Key\":\"s3-test\",\"fileName\":\"content.pdf\"}";
+        OcrResultMessage ocrMessage = new OcrResultMessage("Test content", "s3-test", "content.pdf");
         SummaryResponse summaryResponse = new SummaryResponse("Summary");
-        GenAiResultMessage genAiMessage = new GenAiResultMessage("Test content", "Summary");
-
         ConsumerRecord<String, String> record = new ConsumerRecord<>("input-topic", 0, 0, "key", inputJson);
         Exception sendException = new RuntimeException("Send failed");
 
         when(workerProperties.getOutputTopic()).thenReturn("test-output-topic");
         when(objectMapper.readValue(inputJson, OcrResultMessage.class)).thenReturn(ocrMessage);
         when(geminiService.summarize("Test content")).thenReturn(summaryResponse);
-        when(objectMapper.writeValueAsString(genAiMessage)).thenReturn("{}");
+        when(objectMapper.writeValueAsString(any(GenAiResultMessage.class))).thenReturn("{}");
 
         invokeProcessRecord(record, kafkaProducer);
 
@@ -348,8 +345,8 @@ class GenAiWorkerTest {
 
     @Test
     void parseInput_shouldParseValidJson() throws Exception {
-        String validJson = "{\"processedMessage\":\"Valid content\"}";
-        OcrResultMessage expectedMessage = new OcrResultMessage("Valid content");
+        String validJson = "{\"processedMessage\":\"Valid content\",\"s3Key\":\"s3-valid\",\"fileName\":\"valid.pdf\"}";
+        OcrResultMessage expectedMessage = new OcrResultMessage("Valid content", "s3-valid", "valid.pdf");
 
         when(objectMapper.readValue(validJson, OcrResultMessage.class)).thenReturn(expectedMessage);
 
@@ -374,10 +371,10 @@ class GenAiWorkerTest {
 
     @Test
     void parseInput_shouldThrowException_whenMessageIsNull() throws Exception {
-        String jsonWithNullMessage = "{\"processedMessage\":null}";
+        String jsonWithNullMessage = "{\"processedMessage\":null,\"s3Key\":\"s3-null\",\"fileName\":\"null.pdf\"}";
 
         when(objectMapper.readValue(jsonWithNullMessage, OcrResultMessage.class))
-            .thenReturn(new OcrResultMessage(null));
+            .thenReturn(new OcrResultMessage(null, "s3-null", "null.pdf"));
 
         assertThatThrownBy(() -> invokeParseInput(jsonWithNullMessage))
             .isInstanceOf(IllegalArgumentException.class)
@@ -386,10 +383,10 @@ class GenAiWorkerTest {
 
     @Test
     void parseInput_shouldThrowException_whenMessageIsBlank() throws Exception {
-        String jsonWithBlankMessage = "{\"processedMessage\":\"   \"}";
+        String jsonWithBlankMessage = "{\"processedMessage\":\"   \",\"s3Key\":\"s3-blank\",\"fileName\":\"blank.pdf\"}";
 
         when(objectMapper.readValue(jsonWithBlankMessage, OcrResultMessage.class))
-            .thenReturn(new OcrResultMessage("   "));
+            .thenReturn(new OcrResultMessage("   ", "s3-blank", "blank.pdf"));
 
         assertThatThrownBy(() -> invokeParseInput(jsonWithBlankMessage))
             .isInstanceOf(IllegalArgumentException.class)
@@ -398,7 +395,7 @@ class GenAiWorkerTest {
 
     @Test
     void parseInput_shouldThrowException_whenEntireMessageIsNull() throws Exception {
-        String jsonReturningNull = "{\"processedMessage\":\"content\"}";
+        String jsonReturningNull = "{\"processedMessage\":\"content\",\"s3Key\":\"s3-key\",\"fileName\":\"content.pdf\"}";
 
         when(objectMapper.readValue(jsonReturningNull, OcrResultMessage.class)).thenReturn(null);
 
@@ -409,8 +406,8 @@ class GenAiWorkerTest {
 
     @Test
     void serialize_shouldSerializeValidObject() throws Exception {
-        GenAiResultMessage message = new GenAiResultMessage("content", "summary");
-        String expectedJson = "{\"processedMessage\":\"content\",\"summary\":\"summary\"}";
+        GenAiResultMessage message = new GenAiResultMessage("content", "summary", "s3-key", "elastic-id", "content.pdf");
+        String expectedJson = "{\"processedMessage\":\"content\",\"summary\":\"summary\",\"s3Key\":\"s3-key\",\"elasticId\":\"elastic-id\",\"fileName\":\"content.pdf\"}";
 
         when(objectMapper.writeValueAsString(message)).thenReturn(expectedJson);
 
@@ -422,7 +419,7 @@ class GenAiWorkerTest {
 
     @Test
     void serialize_shouldThrowException_whenSerializationFails() throws Exception {
-        GenAiResultMessage message = new GenAiResultMessage("content", "summary");
+        GenAiResultMessage message = new GenAiResultMessage("content", "summary", "s3-key", "elastic-id", "content.pdf");
         JsonProcessingException jsonException = mock(JsonProcessingException.class);
 
         when(objectMapper.writeValueAsString(message)).thenThrow(jsonException);

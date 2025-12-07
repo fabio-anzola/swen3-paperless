@@ -1,3 +1,3 @@
 package at.technikum.swen3.gemini.dto;
 
-public record GenAiResultMessage(String processedMessage, String summary) { }
+public record GenAiResultMessage(String processedMessage, String summary, String s3Key, String elasticId, String fileName) { }
