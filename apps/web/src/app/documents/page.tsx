@@ -51,6 +51,7 @@ export default function DocumentsPage() {
           documents={documents}
           downloadingId={downloadingId}
           onDownload={handleDownload}
+          token={token}
         />
       </LoadingState>
     </main>
