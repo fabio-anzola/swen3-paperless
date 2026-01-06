@@ -6,6 +6,7 @@ interface DocumentListProps {
   downloadingId: number | null;
   onDownload: (id: number) => void;
   query?: string;
+  token: string;
 }
 
 export default function DocumentList({
@@ -13,6 +14,7 @@ export default function DocumentList({
   downloadingId,
   onDownload,
   query,
+  token,
 }: DocumentListProps) {
   if (documents.length === 0) {
     return (
@@ -30,6 +32,7 @@ export default function DocumentList({
           document={document}
           isDownloading={downloadingId === document.id}
           onDownload={onDownload}
+          token={token}
         />
       ))}
     </ul>

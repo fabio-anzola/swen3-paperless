@@ -73,6 +73,7 @@ export default function DocumentsPage() {
           downloadingId={downloadingId}
           onDownload={handleDownload}
           query={query}
+          token={token}
         />
       </LoadingState>
     </main>
