@@ -9,4 +9,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
     Page<Document> findAllByOwnerId(Long ownerId, Pageable pageable);
+
+    java.util.Optional<Document> findByS3Key(String s3Key);
+
+    java.util.List<Document> findAllByOwnerIdAndElasticIdIsNotNull(Long ownerId);
 }

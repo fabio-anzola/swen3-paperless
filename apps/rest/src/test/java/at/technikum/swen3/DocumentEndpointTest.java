@@ -30,8 +30,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import at.technikum.swen3.endpoint.DocumentEndpoint;
 import at.technikum.swen3.entity.User;
 import at.technikum.swen3.service.IDocumentService;
+import at.technikum.swen3.service.IDocumentSearchService;
 import at.technikum.swen3.service.IUserService;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
+import at.technikum.swen3.service.dtos.document.DocumentSearchResultDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.model.DocumentDownload;
 
@@ -41,6 +43,9 @@ class DocumentEndpointTest {
 
     @Mock
     private IDocumentService documentService;
+
+    @Mock
+    private IDocumentSearchService documentSearchService;
 
     @Mock
     private IUserService userService;
@@ -54,7 +59,7 @@ class DocumentEndpointTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        documentEndpoint = new DocumentEndpoint(documentService, userService, objectMapper);
+        documentEndpoint = new DocumentEndpoint(documentService, documentSearchService, userService, objectMapper);
     }
 
     private Long mockUserAndAuthentication(String username) {
@@ -97,6 +102,24 @@ class DocumentEndpointTest {
         assertEquals(documentDto, result);
         verify(userService).findByUsername(username);
         verify(documentService).getMeta(userId, documentId);
+    }
+
+    @Test
+    void search_shouldReturnResults() {
+        String username = "testUser";
+        Long userId = mockUserAndAuthentication(username);
+        Pageable pageable = Pageable.unpaged();
+        Page<DocumentSearchResultDto> expected = new PageImpl<>(List.of(
+                new DocumentSearchResultDto(1L, "Doc1", "Summary", userId, "s3", 1.0)
+        ));
+
+        when(documentSearchService.search(userId, "foo", pageable)).thenReturn(expected);
+
+        Page<DocumentSearchResultDto> result = documentEndpoint.search(authentication, "foo", pageable);
+
+        assertEquals(expected, result);
+        verify(userService).findByUsername(username);
+        verify(documentSearchService).search(userId, "foo", pageable);
     }
 
 @Test

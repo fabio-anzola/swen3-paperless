@@ -94,7 +94,7 @@ public class DocumentService implements IDocumentService {
         d = documentRepository.save(d);
 
         try {
-            kafkaProducerService.sendMessage(ocrTopic, objectMapper.writeValueAsString(new OcrTopicMessageDto(d.getS3Key())));
+            kafkaProducerService.sendMessage(ocrTopic, objectMapper.writeValueAsString(new OcrTopicMessageDto(d.getS3Key(), d.getName())));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

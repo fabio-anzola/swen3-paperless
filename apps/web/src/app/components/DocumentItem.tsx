@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   createDocumentShare,
@@ -16,6 +16,8 @@ interface DocumentItemProps {
     name: string;
     s3Key?: string | null;
     ownerId: number;
+    summary?: string | null;
+    score?: number | null;
   };
   isDownloading: boolean;
   onDownload: (id: number) => void;
@@ -89,7 +91,7 @@ export default function DocumentItem({
   };
 
   const formatDate = (value?: string | null) => {
-    if (!value) return "—";
+    if (!value) return "-";
     const date = new Date(value);
     return date.toLocaleString();
   };
@@ -121,8 +123,13 @@ export default function DocumentItem({
   return (
     <li className="rounded-xl bg-white p-4 shadow space-y-3">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <p className="text-gray-900 font-semibold">{document.name}</p>
+          {document.summary && (
+            <p className="mt-1 text-sm text-gray-600 overflow-hidden text-ellipsis">
+              {document.summary}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -130,7 +137,7 @@ export default function DocumentItem({
             disabled={isDownloading}
             onClick={() => onDownload(document.id)}
           >
-            {isDownloading ? "Downloading…" : "Download"}
+            {isDownloading ? "Downloading..." : "Download"}
           </button>
           <button
             className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
@@ -148,7 +155,7 @@ export default function DocumentItem({
               Share settings
             </h3>
             {loadingShares && (
-              <span className="text-xs text-gray-500">Loading…</span>
+              <span className="text-xs text-gray-500">Loading...</span>
             )}
           </div>
 
@@ -195,7 +202,7 @@ export default function DocumentItem({
                 disabled={creating}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {creating ? "Creating…" : "Create share link"}
+                {creating ? "Creating..." : "Create share link"}
               </button>
             </div>
           </form>
@@ -215,7 +222,7 @@ export default function DocumentItem({
                   >
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-medium text-gray-900">
-                        Token: {share.token.slice(0, 8)}…
+                        Token: {share.token.slice(0, 8)}
                       </span>
                       {share.passwordProtected && (
                         <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
@@ -229,7 +236,7 @@ export default function DocumentItem({
                       )}
                     </div>
                     <p className="text-xs text-gray-600">
-                      Starts: {formatDate(share.startsAt)} · Expires:{" "}
+                      Starts: {formatDate(share.startsAt)} - Expires: {" "}
                       {formatDate(share.expiresAt)}
                     </p>
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -255,7 +262,7 @@ export default function DocumentItem({
                         disabled={!share.active}
                         title={share.active ? "Deactivate link" : "Inactive"}
                       >
-                        🗑️
+                        Deactivate
                       </button>
                     </div>
                   </div>
@@ -297,10 +304,10 @@ export default function DocumentItem({
                           </span>
                         </td>
                         <td className="px-3 py-2 text-gray-700">
-                          {log.remoteAddress || "—"}
+                          {log.remoteAddress || "-"}
                         </td>
                         <td className="px-3 py-2 text-gray-700">
-                          {log.reason || "—"}
+                          {log.reason || "-"}
                         </td>
                       </tr>
                     ))}

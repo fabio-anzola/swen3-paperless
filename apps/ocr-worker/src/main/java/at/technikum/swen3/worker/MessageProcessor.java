@@ -42,14 +42,18 @@ public class MessageProcessor {
 
         OcrTopicMessageDto input = parseMessage(record.value());
         String s3Key = input.getS3Key();
+        String fileName = input.getFileName();
         if (s3Key == null || s3Key.isBlank()) {
             throw new OcrProcessingException("Message missing s3Key");
+        }
+        if (fileName == null || fileName.isBlank()) {
+            fileName = s3Key;
         }
         logger.info("Downloading file from S3 with key: {}", s3Key);
 
         try (var fileStream = s3Service.downloadFile(s3Key)) {
             String extractedText = ocrService.extractText(fileStream, s3Key);
-            ResultTopicMessageDto output = new ResultTopicMessageDto(extractedText);
+            ResultTopicMessageDto output = new ResultTopicMessageDto(extractedText, s3Key, fileName);
 
             String outputJson = serializeResult(output);
 
