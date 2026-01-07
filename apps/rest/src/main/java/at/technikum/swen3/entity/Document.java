@@ -31,4 +31,8 @@ public class Document {
   @Size(max = 255)
   @Column(nullable = false)
   private String s3Key;
+
+  @Size(max = 255)
+  @Column(name = "elastic_id")
+  private String elasticId;
 }

@@ -1,10 +1,11 @@
 package at.technikum.swen3.endpoint;
 
 import at.technikum.swen3.exception.DocumentNotFoundException;
-import at.technikum.swen3.exception.UserNotFoundException;
 import at.technikum.swen3.service.IDocumentService;
+import at.technikum.swen3.service.IDocumentSearchService;
 import at.technikum.swen3.service.IUserService;
 import at.technikum.swen3.service.dtos.document.DocumentDto;
+import at.technikum.swen3.service.dtos.document.DocumentSearchResultDto;
 import at.technikum.swen3.service.dtos.document.DocumentUploadDto;
 import at.technikum.swen3.service.model.DocumentDownload;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,12 +32,14 @@ public class DocumentEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final IDocumentService documentService;
+    private final IDocumentSearchService documentSearchService;
     private final IUserService userService;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public DocumentEndpoint(IDocumentService documentService, IUserService userService, ObjectMapper objectMapper) {
+    public DocumentEndpoint(IDocumentService documentService, IDocumentSearchService documentSearchService, IUserService userService, ObjectMapper objectMapper) {
         this.documentService = documentService;
+        this.documentSearchService = documentSearchService;
         this.userService = userService;
         this.objectMapper = objectMapper;
     }
@@ -65,6 +68,19 @@ public class DocumentEndpoint {
         }
         LOG.info("Fetching metadata for documentId={} by userId={}", id, userId);
         return documentService.getMeta(userId, id);
+    }
+
+    @GetMapping("/search")
+    public Page<DocumentSearchResultDto> search(Authentication authentication, @RequestParam("q") String query, Pageable pageable) {
+        Long userId = userService.findByUsername(authentication.getName()).getId();
+        if (userId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Unauthorized: user not found"
+            );
+        }
+        LOG.info("Searching documents for userId={} with query='{}'", userId, query);
+        return documentSearchService.search(userId, query, pageable);
     }
 
     @GetMapping("/{id}/content")
