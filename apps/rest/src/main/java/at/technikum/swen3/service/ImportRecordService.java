@@ -4,6 +4,8 @@ import at.technikum.swen3.entity.ImportedRecord;
 import at.technikum.swen3.repository.ImportedRecordRepository;
 import at.technikum.swen3.service.dtos.imports.ImportRecordDto;
 import at.technikum.swen3.service.dtos.imports.ImportRequestDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,16 @@ public class ImportRecordService implements IImportRecordService {
 
         ImportedRecord saved = importedRecordRepository.save(record);
         LOG.info("Stored imported record id={}, date={}", saved.getId(), saved.getDate());
-        return new ImportRecordDto(saved.getId(), saved.getContent(), saved.getDate(), saved.getDescription(), saved.getCreatedAt());
+        return toDto(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ImportRecordDto> list(Pageable pageable) {
+        return importedRecordRepository.findAll(pageable).map(this::toDto);
+    }
+
+    private ImportRecordDto toDto(ImportedRecord record) {
+        return new ImportRecordDto(record.getId(), record.getContent(), record.getDate(), record.getDescription(), record.getCreatedAt());
     }
 }
