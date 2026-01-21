@@ -3,6 +3,7 @@ package at.technikum.swen3.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -19,7 +20,8 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/v1/user/login", "/api/v1/user/register", "/api/v1/public/share/**", "/api/v1/paperless/import").permitAll()
+            .requestMatchers("/api/v1/user/login", "/api/v1/user/register", "/api/v1/public/share/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/v1/paperless/import").permitAll()
             .requestMatchers("/api/v1/**").authenticated()
             .anyRequest().authenticated()
         )
