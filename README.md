@@ -73,6 +73,48 @@ The application uses PostgreSQL with the following configuration:
 
 The project uses JUnit for testing and JaCoCo for code coverage analysis.
 
+#### Integration Tests
+
+The project includes comprehensive integration tests that verify the complete document upload workflow using Testcontainers.
+
+**Document Upload Integration Test** - Tests the full end-to-end flow:
+
+1. Upload document via REST API
+2. Document is stored in MinIO (S3)
+3. OCR worker extracts text from the document
+4. GenAI worker generates a summary using Gemini AI
+5. Document is indexed in ElasticSearch with OCR text and summary
+6. Document metadata is updated with ElasticSearch ID
+
+To run the integration tests:
+
+```bash
+# Navigate to the REST API directory
+cd apps/rest
+
+# Run all tests including integration tests
+mvn test
+
+# Run only the integration test
+mvn test -Dtest=DocumentUploadIntegrationTest
+
+# Run only integration tests using Maven profile
+mvn test -Pintegration-tests-only
+
+# Skip integration tests (run only unit tests)
+mvn test -Pskip-integration-tests
+```
+
+**Prerequisites for Integration Tests:**
+
+- Docker must be running (Testcontainers will start all required services)
+- Set `GEMINI_API_KEY` environment variable for GenAI worker (or tests will use a mock key)
+- Sufficient system resources (integration test starts PostgreSQL, Kafka, MinIO, ElasticSearch, OCR worker, and GenAI worker)
+
+The integration test uses a `test.compose.yml` file located at `apps/rest/src/test/resources/test.compose.yml` which is automatically managed by Testcontainers.
+
+#### Unit Tests
+
 #### REST API Module
 
 ```bash
