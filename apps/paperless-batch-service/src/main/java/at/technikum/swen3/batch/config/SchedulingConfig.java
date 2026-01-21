@@ -28,7 +28,7 @@ public class SchedulingConfig implements SchedulingConfigurer {
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.setScheduler(taskScheduler());
+        taskRegistrar.setScheduler(batchTaskScheduler());
         taskRegistrar.addTriggerTask(batchImportService::runImportBatch, nextExecutionTrigger());
     }
 
@@ -51,7 +51,7 @@ public class SchedulingConfig implements SchedulingConfigurer {
     }
 
     @Bean(destroyMethod = "shutdown")
-    public Executor taskScheduler() {
+    public Executor batchTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
         scheduler.setThreadNamePrefix("batch-import-");
