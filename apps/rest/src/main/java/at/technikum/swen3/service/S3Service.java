@@ -47,7 +47,7 @@ public class S3Service {
         ensureBucketExists();
     }
 
-    private void ensureBucketExists() {
+    public void ensureBucketExists() {
         try {
             boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
             if (!exists) {
@@ -57,6 +57,20 @@ public class S3Service {
         } catch (Exception e) {
             logger.error("Error ensuring bucket exists: {}", bucketName, e);
             throw new RuntimeException("Failed to ensure bucket exists", e);
+        }
+    }
+
+    public boolean fileExists(String s3Key) {
+        try {
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(s3Key)
+                            .build()
+            );
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 

@@ -89,6 +89,8 @@ mvnw clean test
 mvnw jacoco:report
 ```
 
+**Note:** The integration tests use [Testcontainers](https://www.testcontainers.org/) to spin up real infrastructure (PostgreSQL, Kafka, Elasticsearch, MinIO). **Docker must be running** on your system to execute these tests. The tests automatically start and stop the required containers.
+
 #### OCR Worker Module
 
 ```bash
