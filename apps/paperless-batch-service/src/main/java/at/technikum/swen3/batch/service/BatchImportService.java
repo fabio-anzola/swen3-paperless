@@ -54,10 +54,20 @@ public class BatchImportService {
         try {
             ImportPayload payload = xmlImportParser.parse(file);
             importRestClient.send(payload);
+            deleteFile(file);
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             LOG.error("Failed to parse XML file {}: {}", file.getFileName(), ex.getMessage());
         } catch (RuntimeException ex) {
             LOG.error("Failed to process file {}: {}", file.getFileName(), ex.getMessage());
+        }
+    }
+
+    private void deleteFile(Path file) {
+        try {
+            Files.deleteIfExists(file);
+            LOG.info("Deleted imported file {}", file.getFileName());
+        } catch (IOException ex) {
+            LOG.warn("Imported but could not delete file {}: {}", file.getFileName(), ex.getMessage());
         }
     }
 }
