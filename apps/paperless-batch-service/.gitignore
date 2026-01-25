@@ -1,0 +1,17 @@
+# Build output
+/target
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Maven wrapper cache
+.mvn/wrapper/maven-wrapper.jar

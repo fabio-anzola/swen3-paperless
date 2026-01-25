@@ -6,37 +6,39 @@ skinparam componentStyle rectangle
 
 actor "User" as user
 
-' Frontend
 component "Next.js Web\n:3000" as web
+component "Spring Boot API\n:4000" as api
 
-' Backend
-component "Spring Boot API\n:4000" as app
+queue "Kafka Broker\n:9092" as kafka
+component "Kafka UI\n:8080" as kafkaUI
 
-' Message Broker
-queue "Kafka\n:9092" as kafka
+component "OCR Worker\n(consumes ocr)" as ocr
+component "GenAI Worker\n(consumes genai-queue)" as genai
+cloud "Gemini API" as gemini
 
-' Worker
-component "OCR Worker\n(Scalable)" as worker
-
-' Database
+cloud "MinIO S3\n:9000 / 9001" as minio
 database "PostgreSQL\n:5455" as db
-
-' Admin Tool
 component "pgAdmin\n:5050" as pgadmin
 
-' Cloud Storage
-cloud "File Storage" as storage
+component "Elasticsearch\n:9200" as es
+component "Kibana\n:5601" as kibana
 
-' Interactions
 user --> web : HTTP
-web --> app : REST API
-app --> db : JDBC
-app --> kafka : Publish (ocr)
-kafka --> app : Consume (result)
-app --> storage : Store/Retrieve
-kafka --> worker : Consume (ocr)
-worker --> kafka : Publish (result)
-worker --> storage : Read
+web --> api : REST /api/v1
+api --> minio : Upload/Download
+api --> db : JDBC
+api --> kafka : Publish 'ocr'
+kafka --> ocr : Consume 'ocr'
+ocr --> minio : Read object
+ocr --> kafka : Publish 'genai-queue'
+kafka --> genai : Consume 'genai-queue'
+genai --> gemini : Summarize
+genai --> es : Index summaries
+genai --> kafka : Publish 'result'
+kafka --> api : Consume 'result'
+api --> es : Search / Query
 pgadmin --> db : Admin
+kafkaUI --> kafka : Monitor
+kibana --> es : Visualize
 
 @enduml
