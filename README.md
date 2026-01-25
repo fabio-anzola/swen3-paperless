@@ -8,14 +8,14 @@ A Spring Boot application for document management with PostgreSQL database and p
 
 The system follows a microservices architecture with the following components:
 
-- **Next.js Web Frontend** (Port 3000): User interface for document management
-- **Spring Boot REST API** (Port 4000): Backend API handling business logic
-- **Kafka Message Queue** (Port 9092): Event streaming backbone
-- **OCR Worker**: Scalable workers for document text extraction; consumes the `ocr` topic and publishes OCR text to `genai-queue`
-- **GenAI Worker**: Scalable workers that summarize OCR text with Gemini; consume `genai-queue` and publish enriched payloads to `result`
-- **PostgreSQL Database** (Port 5455): Data persistence
-- **pgAdmin** (Port 5050): Database administration interface
-- **File Storage**: Document and file storage system
+- **Next.js Web Frontend** – `http://localhost:3000`
+- **Spring Boot REST API** – container port 8080, exposed on host `http://localhost:4000`
+- **Kafka** – broker on `localhost:9092`, Kafka UI on `http://localhost:8080`
+- **OCR Worker** – consumes `ocr`, produces `genai-queue`
+- **GenAI Worker** – consumes `genai-queue`, produces `result`, indexes summaries into Elasticsearch
+- **PostgreSQL** – host port 5455 (-> container 5432), pgAdmin on `http://localhost:5050`
+- **MinIO** – S3-compatible storage on `http://localhost:9000` (console `http://localhost:9001`)
+- **Elasticsearch + Kibana** – search index for OCR/GenAI output
 
 ## Prerequisites
 
@@ -24,34 +24,40 @@ The system follows a microservices architecture with the following components:
 
 ## Quick Start
 
-### Build and Start the Application
+1) Create `.env.secrets` in the repo root (values shown are examples):
 
-- Create a `.env.secrets` file in the projects root directory to define secret
-  environment keys.
+```
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash
+SPRING_ELASTICSEARCH_PASSWORD=MyStrongPassword
+```
 
-- Run one of the below commands:
+2) Build and start everything:
 
 ```bash
-# Build and start all services (database, API, workers, UI)
+# Build and start all services (DB, API, workers, UI)
 docker compose --env-file .env.secrets up --build
 
 # Scale stateless workers (example: 1 OCR worker, 3 GenAI workers)
 docker compose --env-file .env.secrets up --build --scale ocr-worker=1 --scale genai-worker=3
 ```
 
-### Access the Services
+3) Access the services
 
-- **Spring Boot API**: http://localhost:8080
-- **pgAdmin (Database Management)**: http://localhost:5050
-  - Email: `admin@admin.com`
-  - Password: `admin`
-- **PostgreSQL Database**: localhost:5455 (from host machine)
+- Web UI: http://localhost:3000
+- REST API (container 8080): http://localhost:4000
+- Kafka UI: http://localhost:8080
+- MinIO console: http://localhost:9001 (user/pass `minioadmin`)
+- pgAdmin: http://localhost:5050 (user `admin@admin.com`, pass `admin`)
+- Postgres: `localhost:5455`
 
 ### Worker / Kafka Flow
 
 1. REST API uploads user files to MinIO and emits `{ "s3Key": "<key>" }` on topic `ocr`.
 2. OCR workers download the file, extract text, and publish `{ "processedMessage": "<ocr-text>" }` to `genai-queue`.
 3. GenAI workers consume `genai-queue`, call the Gemini API to summarize, and publish `{ "processedMessage": "<ocr-text>", "summary": "<genai-summary>" }` to the `result` topic.
+
+See `documentation/uploadDocument.mermaid` for a concise flow diagram (render with `npx @mermaid-js/mermaid-cli -i documentation/uploadDocument.mermaid -o artifacts/uploadDocument.svg` if you need an SVG).
 
 ### GenAI Worker
 
