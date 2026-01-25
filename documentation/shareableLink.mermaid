@@ -1,0 +1,25 @@
+flowchart LR
+  owner((Owner<br/>authenticated))
+  guest((Recipient<br/>link holder))
+
+  subgraph REST_API["REST service"]
+    create["POST /document/{id}/shares<br/>+ optional password / expiry<br/>→ create token"]
+    store["Persist DocumentShare<br/>(token, startsAt, expiresAt,<br/>password hash, active=true)"]
+    list["GET /document/{id}/shares<br/>& /logs (owner only)"]
+    deactivate["DELETE /document/{id}/shares/{shareId}<br/>(active=false)"]
+    access["GET /public/share/{token}<br/>(optional password)"]
+    validate["Validate active window,<br/>password (if set), token exists"]
+    fetch["Fetch file from S3 via s3Key"]
+    logAccess["Write access log<br/>(success / failure, IP, UA, reason)"]
+    download["Return file as attachment"]
+  end
+
+  owner --> create --> store
+  owner --> list
+  owner --> deactivate
+
+  guest --> access --> validate
+  validate -- ok --> fetch --> download
+  validate -- fail --> logAccess
+  fetch --> logAccess
+  download --> logAccess
