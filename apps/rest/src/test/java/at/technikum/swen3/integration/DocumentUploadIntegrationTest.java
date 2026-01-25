@@ -22,14 +22,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration test for the document upload workflow.
- * Tests the complete flow:
- * 1. Upload document via REST API
- * 2. Verify document is stored in database
- * 3. Verify document is uploaded to MinIO (S3)
- * 4. Verify OCR message is sent to Kafka
- */
 @AutoConfigureMockMvc
 @Import(TestSecurityConfig.class)
 class DocumentUploadIntegrationTest extends BaseIntegrationTest {
@@ -56,11 +48,9 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Clean up before each test
         documentRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Create test user
         testUser = new User();
         testUser.setUsername("testuser");
         testUser.setPassword(passwordEncoder.encode("password"));
@@ -69,7 +59,6 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void testDocumentUploadWorkflow() throws Exception {
-        // Prepare test file
         String filename = "test-document.txt";
         String fileContent = "This is a test document for OCR processing.";
         MockMultipartFile file = new MockMultipartFile(
@@ -79,7 +68,6 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
                 fileContent.getBytes()
         );
 
-        // Step 1: Upload document via REST API
         MvcResult result = mockMvc.perform(multipart("/api/v1/document")
                         .file(file)
                         .with(user(testUser.getUsername()).roles("USER")))
@@ -94,25 +82,19 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
         assertEquals(filename, documentDto.name());
         assertNotNull(documentDto.s3Key());
 
-        // Step 2: Verify document is stored in database
         var savedDocument = documentRepository.findById(documentDto.id());
         assertTrue(savedDocument.isPresent());
         assertEquals(filename, savedDocument.get().getName());
         assertEquals(documentDto.s3Key(), savedDocument.get().getS3Key());
         assertEquals(testUser.getId(), savedDocument.get().getOwner().getId());
 
-        // Step 3: Verify document is uploaded to MinIO (S3)
         byte[] downloadedContent = s3Service.downloadFile(documentDto.s3Key()).readAllBytes();
         assertNotNull(downloadedContent);
         assertEquals(fileContent, new String(downloadedContent));
-        
-        // Note: Kafka message verification is skipped in this test
-        // The Kafka producer is tested separately in unit tests
     }
 
     @Test
     void testDocumentUploadWithCustomName() throws Exception {
-        // Prepare test file
         String originalFilename = "original.pdf";
         String customName = "custom-document-name.pdf";
         byte[] fileContent = "PDF content here".getBytes();
@@ -131,7 +113,6 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
                 String.format("{\"name\":\"%s\"}", customName).getBytes()
         );
 
-        // Upload document with custom name
         MvcResult result = mockMvc.perform(multipart("/api/v1/document")
                         .file(file)
                         .file(meta)
@@ -142,10 +123,8 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
         String responseBody = result.getResponse().getContentAsString();
         DocumentDto documentDto = objectMapper.readValue(responseBody, DocumentDto.class);
 
-        // Verify custom name is used
         assertEquals(customName, documentDto.name());
 
-        // Verify in database
         var savedDocument = documentRepository.findById(documentDto.id());
         assertTrue(savedDocument.isPresent());
         assertEquals(customName, savedDocument.get().getName());
@@ -160,7 +139,6 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
                 new byte[0]
         );
 
-        // Upload should fail with empty file
         mockMvc.perform(multipart("/api/v1/document")
                         .file(emptyFile)
                         .with(user(testUser.getUsername()).roles("USER")))
@@ -176,7 +154,6 @@ class DocumentUploadIntegrationTest extends BaseIntegrationTest {
                 "content".getBytes()
         );
 
-        // Upload without authentication should fail
         mockMvc.perform(multipart("/api/v1/document")
                         .file(file))
                 .andExpect(status().isUnauthorized());
