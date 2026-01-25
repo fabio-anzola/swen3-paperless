@@ -53,6 +53,23 @@ services:
     networks:
       - app-network
 
+  paperless-batch-service:
+    build:
+      context: ./apps/paperless-batch-service
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - BATCH_FOLDER_PATH=/imports
+      - BATCH_RUN_TIME=22:05
+      - BATCH_TIMEZONE=UTC+1
+      - IMPORT_API_URL=http://app:8080/api/v1/paperless/import
+    depends_on:
+      - app
+    volumes:
+      - ./import:/imports
+    networks:
+      - app-network
+
   ocr-worker:
     build: ./apps/ocr-worker
     restart: always
@@ -221,8 +238,8 @@ services:
       - elasticsearch
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD:-MyStrongPassword}
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-MyStrongPassword}
     ports:
       - "5601:5601"
     networks:

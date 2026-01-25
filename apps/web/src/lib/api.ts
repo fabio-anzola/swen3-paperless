@@ -5,6 +5,8 @@ interface UserDto {
   username: string;
 }
 
+type Page<T> = { content: T[] };
+
 export type DocumentShareDto = {
   id: number;
   documentId: number;
@@ -23,6 +25,14 @@ export type DocumentShareLogDto = {
   remoteAddress?: string | null;
   userAgent?: string | null;
   reason?: string | null;
+};
+
+export type ImportRecordDto = {
+  id: number;
+  content: string;
+  date: string;
+  description: string;
+  createdAt: string;
 };
 
 export async function postLogin(
@@ -156,6 +166,28 @@ export async function deactivateDocumentShare(
   }
 
   return res.json();
+}
+
+export async function getImportRecords(
+  token: string,
+  size = 50
+): Promise<ImportRecordDto[]> {
+  const params = new URLSearchParams({
+    size: `${size}`,
+    sort: "createdAt,DESC",
+  });
+  const res = await fetch(api(`/paperless/import?${params.toString()}`), {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const msg = await safeMessage(res);
+    throw new Error(msg || `Failed to load batch imports (${res.status})`);
+  }
+
+  const page: Page<ImportRecordDto> = await res.json();
+  return page.content;
 }
 
 async function safeMessage(res: Response) {

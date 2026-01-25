@@ -47,6 +47,12 @@ export default function Header() {
               >
                 Upload
               </Link>
+              <Link
+                href="/batch"
+                className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Batch
+              </Link>
             </nav>
           </div>
 

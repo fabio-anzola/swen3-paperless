@@ -24,7 +24,7 @@ export default function DashboardPage() {
     <main className="mx-auto max-w-4xl p-6">
       <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* My Documents Box */}
         <Link href="/documents" className="group">
           <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 group-hover:border-blue-300">
@@ -50,6 +50,36 @@ export default function DashboardPage() {
               </h2>
               <p className="text-gray-600">
                 View and manage your uploaded documents
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Batch Imports */}
+        <Link href="/batch" className="group">
+          <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 group-hover:border-indigo-300">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-200">
+                <svg
+                  className="w-8 h-8 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 7h18M3 12h18M3 17h18"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors duration-200">
+                Batch Imports
+              </h2>
+              <p className="text-gray-600">
+                Monitor XML imports processed by the batch service
               </p>
             </div>
           </div>
