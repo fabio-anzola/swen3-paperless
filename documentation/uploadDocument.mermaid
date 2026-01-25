@@ -1,25 +1,25 @@
 flowchart LR
-  actor((Actor))
+  actor((User))
 
   subgraph REST["REST service"]
-    api["Handles upload API request"]
-    s3["Persist file in S3<br/>→ get s3Key"]
-    toOcr["Produce message to Kafka<br/>${KAFKA_TOPIC_OCR} (default: ocr)"]
+    api["POST /api/v1/document"]
+    s3["Upload file to MinIO<br/>-> returns s3Key"]
+    toOcr["Produce message to Kafka<br/>${KAFKA_TOPIC_OCR:-ocr}"]
   end
 
   subgraph OCR["ocr-worker"]
     parseOcr["Parse OcrTopicMessageDto"]
     doOcr["Run Tesseract OCR"]
-    toGenAI["Produce OCR result to ${OUTPUT_TOPIC}<br/>(default: genai-queue)"]
+    toGenAI["Produce OCR result to ${OUTPUT_TOPIC:-genai-queue}"]
   end
 
   subgraph GENAI["genai-worker"]
     summarize["Summarize with Gemini"]
-    toResult["Produce GenAI result to ${worker.outputTopic}<br/>(default: result)"]
+    toResult["Produce GenAI result to ${worker.outputTopic:-result}"]
   end
 
   subgraph REST_CONS["REST service (consumer)"]
-    consume["Consume result topic<br/>Update document with elasticId"]
+    consume["Consume result topic<br/>persist elasticId"]
   end
 
   actor --> api --> s3 --> toOcr
