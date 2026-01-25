@@ -18,6 +18,10 @@ flowchart LR
     toResult["Produce GenAI result to ${worker.outputTopic:-result}"]
   end
 
+  subgraph ELASTIC["Elasticsearch"]
+    indexDoc["Index OCR text + summary<br/>as PDFDocument (elasticId)"]
+  end
+
   subgraph REST_CONS["REST service (consumer)"]
     consume["Consume result topic<br/>persist elasticId"]
   end
@@ -25,4 +29,5 @@ flowchart LR
   actor --> api --> s3 --> toOcr
   toOcr -->|topic: ocr| parseOcr --> doOcr --> toGenAI
   toGenAI -->|topic: genai-queue| summarize --> toResult
+  summarize -->|index text + summary| indexDoc
   toResult -->|topic: result| consume
